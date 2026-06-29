@@ -3,6 +3,7 @@ import react from '@vitejs/plugin-react-swc'   // ← change this line
 import tailwindcss from '@tailwindcss/vite'
 import path from 'path'
 
+
 export default defineConfig({
   plugins: [react(), tailwindcss()],
   resolve: {
