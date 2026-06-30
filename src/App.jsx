@@ -4,6 +4,11 @@ import { Toaster } from '@/components/ui/toaster';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { Route, Switch, Router as WouterRouter } from 'wouter';
 import { AnimatePresence, motion } from 'framer-motion';
+import { ScrollToTop } from "@/components/ScrollToTop";
+import { PageLoader } from "@/components/PageLoader";
+
+
+  
 
 import LandingPage from '@/pages/landing';
 import Login from '@/pages/login';
@@ -49,6 +54,7 @@ function Router() {
   return (
     <AnimatePresence mode="wait">
   <Switch>
+
   <Route path="/"                component={(props) => <AnimatedRoute component={LandingPage}    {...props} />} />
   <Route path="/login"           component={(props) => <AnimatedRoute component={Login}          {...props} />} />
   <Route path="/register"        component={(props) => <AnimatedRoute component={Register}       {...props} />} />
@@ -75,6 +81,8 @@ function App() {
         <TooltipProvider>
           <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, '')}>
             <Router />
+            <ScrollToTop />
+            <PageLoader />
           </WouterRouter>
             <SupportChat />
           <Toaster />

@@ -159,7 +159,7 @@ export default function Pricing() {
             className="text-muted-foreground text-lg max-w-xl mx-auto mb-8"
           >
             Buy a virtual number, receive your OTP instantly, and you're done.
-            Pay only for what you use — in Naira.
+            Pay only for what you use.
           </motion.p>
 
           {/* Perks */}
@@ -172,7 +172,7 @@ export default function Pricing() {
             {[
               { icon: Zap,       label: "Instant delivery" },
               { icon: Shield,    label: "100% private" },
-              { icon: RefreshCw, label: "50+ countries" },
+              { icon: RefreshCw, label: "200+ countries" },
             ].map(({ icon: Icon, label }) => (
               <span key={label} className="flex items-center gap-1.5">
                 <Icon className="w-4 h-4 text-violet-500" />
@@ -268,7 +268,7 @@ export default function Pricing() {
         >
           <p className="text-muted-foreground text-sm">
             Prices may vary slightly based on availability and country.{" "}
-            All payments processed securely in <strong>Naira (₦)</strong>.
+      
           </p>
           <Link href={orderHref}>
             <button className="inline-flex items-center gap-2 px-8 py-3 rounded-xl bg-gradient-to-r from-violet-600 to-fuchsia-500 text-white font-semibold shadow-lg shadow-violet-500/25 hover:opacity-90 hover:shadow-violet-500/40 transition-all duration-200">

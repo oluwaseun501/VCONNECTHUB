@@ -1,15 +1,29 @@
 
 
 export const services = [
-{ id: "telegram", name: "Telegram", price: 150, icon: "https://upload.wikimedia.org/wikipedia/commons/8/82/Telegram_logo.svg", successRate: 98 },
-{ id: "whatsapp", name: "WhatsApp", price: 200, icon: "https://upload.wikimedia.org/wikipedia/commons/5/5e/WhatsApp_icon.png", successRate: 95 },
-{ id: "gmail", name: "Gmail", price: 80, icon: "https://upload.wikimedia.org/wikipedia/commons/7/7e/Gmail_icon_%282020%29.svg", successRate: 99 },
-{ id: "facebook", name: "Facebook", price: 120, icon: "https://upload.wikimedia.org/wikipedia/commons/5/51/Facebook_f_logo_%282019%29.svg", successRate: 97 },
-{ id: "tiktok", name: "TikTok", price: 100, icon: "https://upload.wikimedia.org/wikipedia/en/a/a9/TikTok_logo.svg", successRate: 96 },
-{ id: "instagram", name: "Instagram", price: 120, icon: "https://upload.wikimedia.org/wikipedia/commons/e/e7/Instagram_logo_2016.svg", successRate: 97 },
-{ id: "binance", name: "Binance", price: 250, icon: "https://upload.wikimedia.org/wikipedia/commons/1/12/Binance_logo.svg", successRate: 94 },
-{ id: "twitter", name: "Twitter / X", price: 110, icon: "https://upload.wikimedia.org/wikipedia/commons/c/ce/X_logo_2023.svg", successRate: 96 }];
-
+  { id: "telegram", name: "Telegram", price: 150, icon: "https://upload.wikimedia.org/wikipedia/commons/8/82/Telegram_logo.svg", successRate: 98 },
+  { id: "whatsapp", name: "WhatsApp", price: 200, icon: "https://upload.wikimedia.org/wikipedia/commons/5/5e/WhatsApp_icon.png", successRate: 95 },
+  { id: "facebook", name: "Facebook", price: 120, icon: "https://upload.wikimedia.org/wikipedia/commons/5/51/Facebook_f_logo_%282019%29.svg", successRate: 97 },
+  { id: "instagram", name: "Instagram", price: 120, icon: "https://upload.wikimedia.org/wikipedia/commons/e/e7/Instagram_logo_2016.svg", successRate: 97 },
+  { id: "tiktok", name: "TikTok", price: 100, icon: "https://upload.wikimedia.org/wikipedia/en/a/a9/TikTok_logo.svg", successRate: 96 },
+  { id: "twitter", name: "Twitter / X", price: 110, icon: "https://upload.wikimedia.org/wikipedia/commons/c/ce/X_logo_2023.svg", successRate: 96 },
+  { id: "discord", name: "Discord", price: 130, icon: "https://logo.clearbit.com/discord.com", successRate: 97 },
+  { id: "snapchat", name: "Snapchat", price: 110, icon: "https://logo.clearbit.com/snapchat.com", successRate: 95 },
+  { id: "linkedin", name: "LinkedIn", price: 140, icon: "https://logo.clearbit.com/linkedin.com", successRate: 96 },
+  { id: "youtube", name: "YouTube", price: 90, icon: "https://logo.clearbit.com/youtube.com", successRate: 98 },
+  { id: "pinterest", name: "Pinterest", price: 90, icon: "https://logo.clearbit.com/pinterest.com", successRate: 95 },
+  { id: "spotify", name: "Spotify", price: 120, icon: "https://logo.clearbit.com/spotify.com", successRate: 96 },
+  { id: "tinder", name: "Tinder", price: 160, icon: "https://logo.clearbit.com/tinder.com", successRate: 94 },
+  { id: "bumble", name: "Bumble", price: 150, icon: "https://logo.clearbit.com/bumble.com", successRate: 93 },
+  { id: "hinge", name: "Hinge", price: 150, icon: "https://logo.clearbit.com/hinge.co", successRate: 94 },
+  { id: "signal", name: "Signal", price: 130, icon: "https://logo.clearbit.com/signal.org", successRate: 97 },
+  { id: "viber", name: "Viber", price: 120, icon: "https://logo.clearbit.com/viber.com", successRate: 95 },
+  { id: "reddit", name: "Reddit", price: 100, icon: "https://logo.clearbit.com/reddit.com", successRate: 96 },
+  { id: "line", name: "Line", price: 110, icon: "https://logo.clearbit.com/line.me", successRate: 95 },
+  { id: "wechat", name: "WeChat", price: 200, icon: "https://logo.clearbit.com/wechat.com", successRate: 92 },
+  { id: "badoo", name: "Badoo", price: 140, icon: "https://logo.clearbit.com/badoo.com", successRate: 93 },
+  { id: "twitter2", name: "Threads", price: 100, icon: "https://logo.clearbit.com/threads.net", successRate: 95 },
+];
 
 export const countries = [
 { id: "ng", name: "Nigeria", code: "+234", flag: "https://flagcdn.com/w40/ng.png" },

@@ -15,19 +15,7 @@ export default function Register() {
   return (
     <div className="min-h-screen flex flex-col relative overflow-hidden bg-violet-50 dark:bg-[#080b14] transition-colors duration-300">
 
-      {/* ── Atmospheric blobs ── */}
-      {/* <div className="absolute inset-0 pointer-events-none">
-        <div className="absolute top-[-10%] right-[15%] w-[500px] h-[500px] rounded-full bg-violet-400/20 dark:bg-violet-700/25 blur-[120px]" />
-        <div className="absolute bottom-[5%] left-[10%] w-[400px] h-[400px] rounded-full bg-fuchsia-400/20 dark:bg-fuchsia-700/20 blur-[100px]" />
-        <div className="absolute top-[50%] right-[-5%] w-[300px] h-[300px] rounded-full bg-indigo-400/15 dark:bg-indigo-700/15 blur-[80px]" />
-        <div
-          className="absolute inset-0 opacity-[0.04] dark:opacity-[0.03]"
-          style={{
-            backgroundImage: "radial-gradient(circle, currentColor 1px, transparent 1px)",
-            backgroundSize: "28px 28px",
-          }}
-        />
-      </div> */}
+     
 
       <AnimatedOrbs />
 
@@ -47,9 +35,7 @@ export default function Register() {
 
           {/* Logo + title */}
           <div className="flex flex-col items-center gap-3 mb-2">
-            <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-violet-600 to-fuchsia-500 flex items-center justify-center shadow-lg shadow-violet-500/30">
-              <span className="text-2xl font-extrabold text-white">V</span>
-            </div>
+            <img src="/logo.png" alt="VConnectHub" className="h-14 w-auto" />
             <div className="text-center">
               <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
                 Join{" "}

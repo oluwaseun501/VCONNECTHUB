@@ -369,7 +369,7 @@ export default function LandingPage() {
                   <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75" />
                   <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-primary" />
                 </span>
-                API v2.0 is now live
+                FAST & RELIABLE
               </motion.div>
 
               <motion.h1
@@ -390,7 +390,9 @@ export default function LandingPage() {
                 transition={{ ...GLIDE, delay: 0.35 }}
                 className="text-muted-foreground text-lg leading-relaxed mb-8 max-w-md"
               >
-                Bypass SMS verification instantly. Premium, private numbers for Telegram, WhatsApp, OpenAI, and 100+ more services globally.
+                 Get a real phone number instantly. Buy virtual numbers
+         for WhatsApp, Telegram, instagram, TikTok, and 100+
+         platforms worldwide
               </motion.p>
 
               <motion.div
@@ -401,12 +403,12 @@ export default function LandingPage() {
               >
                 <Link href="/register">
                   <Button size="lg" className="bg-gradient-to-r from-violet-600 to-fuchsia-500 hover:from-violet-700 hover:to-fuchsia-600 text-white border-0 shadow-lg shadow-violet-500/25 px-6">
-                    Start Building <ArrowRight className="w-4 h-4 ml-2" />
+                    Get Started <ArrowRight className="w-4 h-4 ml-2" />
                   </Button>
                 </Link>
-                <Link href="/docs">
+                <Link href="/pricing">
                   <Button size="lg" variant="outline" className="px-6">
-                    Read Documentation
+                    View Prices
                   </Button>
                 </Link>
               </motion.div>
@@ -420,7 +422,7 @@ export default function LandingPage() {
                 {[
                   { icon: Zap,         label: "Instant Delivery" },
                   { icon: ShieldCheck, label: "100% Private" },
-                  { icon: Globe2,      label: "50+ Countries" },
+                  { icon: Globe2,      label: "200+ Countries" },
                 ].map(({ icon: Icon, label }) => (
                   <div key={label} className="flex items-center gap-1.5 text-sm text-muted-foreground">
                     <Icon className="w-4 h-4 text-primary" />
@@ -453,7 +455,7 @@ export default function LandingPage() {
           >
             <StatItem value="10k+"  label="Active Users" />
             <StatItem value="250k+" label="Numbers Provided" />
-            <StatItem value="50+"   label="Supported Services" />
+            <StatItem value="100+"   label="Supported Services" />
             <StatItem value="< 5s"  label="Average OTP Time" />
           </motion.div>
         </div>
@@ -481,7 +483,7 @@ export default function LandingPage() {
       </section>
 
       {/* How it Works */}
-      <section className="py-24 bg-muted/30 border-y border-border">
+      <section id="how-it-works" className="py-24 bg-muted/30 border-y border-border">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <SectionHeading
             badge="How it Works"
@@ -491,7 +493,7 @@ export default function LandingPage() {
             variants={containerVariants}
             initial="hidden"
             whileInView="show"
-            viewport={{ once: false, margin: "-60px" }}
+            viewport={{ once: true, margin: "-60px" }}
             className="relative grid sm:grid-cols-3 gap-10"
           >
             <div className="hidden sm:block absolute top-6 left-[calc(16.6%+1.5rem)] right-[calc(16.6%+1.5rem)] h-px bg-gradient-to-r from-transparent via-border to-transparent" />
@@ -509,6 +511,11 @@ export default function LandingPage() {
           title="Works with your favourite apps"
           subtitle="100+ platforms and growing every week."
         />
+        <div className="col-span-full flex justify-center mt-4">
+  <span className="text-sm text-muted-foreground border border-border rounded-full px-4 py-2">
+    + 80 more services available
+  </span>
+</div>
         <motion.div
           variants={containerVariants}
           initial="hidden"
@@ -539,7 +546,7 @@ export default function LandingPage() {
               Ready to get started?
             </h2>
             <p className="text-muted-foreground text-lg mb-8">
-              Join 10,000+ users receiving OTPs in under 5 seconds. No setup fees, no commitments.
+              Join 10,000+ users receiving OTPs in under 5 seconds.
             </p>
             <div className="flex flex-wrap gap-3 justify-center">
               <Link href="/register">

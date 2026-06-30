@@ -34,9 +34,7 @@ const { toast } = useToast();
 
           {/* Logo + title */}
           <div className="flex flex-col items-center gap-3 mb-2">
-            <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-violet-600 to-fuchsia-500 flex items-center justify-center shadow-lg shadow-violet-500/30">
-              <span className="text-2xl font-extrabold text-white">V</span>
-            </div>
+            <img src="/logo.png" alt="VConnectHub" className="h-14 w-auto" />
             <div className="text-center">
               <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
                 Welcome to{" "}

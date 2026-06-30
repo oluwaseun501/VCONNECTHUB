@@ -1,13 +1,14 @@
 import React, { useEffect, useState } from "react";
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
-import { Moon, Sun } from "lucide-react";
+import { Moon, Sun, Menu, X } from "lucide-react";
 import { useTheme } from "next-themes";
 
 export function PublicNavbar() {
   const { theme, setTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
 
   useEffect(() => {
     setMounted(true);
@@ -17,35 +18,28 @@ export function PublicNavbar() {
   }, []);
 
   return (
-    <nav
-      className={`fixed top-0 w-full z-50 transition-all duration-300 border-b ${
-        scrolled
-          ? "bg-background/90 backdrop-blur-xl border-border shadow-sm"
-          : "bg-background/60 backdrop-blur-md border-transparent"
-      }`}
-    >
+    <nav className={`fixed top-0 w-full z-50 transition-all duration-300 border-b ${
+      scrolled
+        ? "bg-background/90 backdrop-blur-xl border-border shadow-sm"
+        : "bg-background/60 backdrop-blur-md border-transparent"
+    }`}>
       <div className="container mx-auto px-6 h-16 flex items-center justify-between">
         {/* Logo */}
         <Link href="/">
           <div className="flex items-center gap-2.5 cursor-pointer">
-            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-violet-600 to-fuchsia-500 flex items-center justify-center shadow-md shadow-violet-500/30">
-              <span className="font-bold text-white text-sm">V</span>
-            </div>
+            <img src="/logo.png" alt="VConnectHub" className="h-9 w-auto" />
             <span className="text-lg font-bold tracking-tight text-foreground hidden sm:block">
               VConnectHub
             </span>
           </div>
         </Link>
 
-        {/* Right side */}
+        {/* Desktop nav */}
         <div className="flex items-center gap-2">
           <div className="hidden md:flex items-center gap-6 text-sm font-medium mr-2 text-muted-foreground">
-            <a href="#how-it-works" className="hover:text-foreground transition-colors">
-              How it Works
-            </a>
-            <Link href="/pricing" className="hover:text-foreground transition-colors">
-  Pricing
-</Link>
+           <a href="/" className="hover:text-foreground transition-colors">Home</a>
+            <a href="/#how-it-works" className="hover:text-foreground transition-colors">How it Works</a>
+            <Link href="/pricing" className="hover:text-foreground transition-colors">Pricing</Link>
           </div>
 
           {mounted && (
@@ -59,13 +53,13 @@ export function PublicNavbar() {
             </Button>
           )}
 
-          <Link href="/login">
+          <Link href="/login" className="hidden md:inline-flex">
             <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-foreground">
               Sign In
             </Button>
           </Link>
 
-          <Link href="/register">
+          <Link href="/register" className="hidden md:inline-flex">
             <Button
               size="sm"
               className="bg-gradient-to-r from-violet-600 to-fuchsia-500 hover:from-violet-700 hover:to-fuchsia-600 text-white border-0 shadow-md shadow-violet-500/20"
@@ -73,6 +67,61 @@ export function PublicNavbar() {
               Get Started
             </Button>
           </Link>
+
+          {/* Hamburger button — mobile only */}
+          <button
+            className="md:hidden p-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+            onClick={() => setMenuOpen(!menuOpen)}
+            aria-label="Toggle menu"
+          >
+            {menuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+          </button>
+        </div>
+      </div>
+
+      {/* Mobile menu — glide down effect */}
+      <div
+       className={`md:hidden overflow-hidden transition-all duration-500 ease-[cubic-bezier(0.4,0,0.2,1)] border-t ${
+          menuOpen
+            ? "max-h-96 opacity-100 border-border"
+            : "max-h-0 opacity-0 border-transparent"
+        } bg-background/95 backdrop-blur-xl`}
+      >
+        <div className="container mx-auto px-6 py-4 flex flex-col gap-1">
+          <a
+  href="/"
+  onClick={() => setMenuOpen(false)}
+  className="block text-sm font-medium text-muted-foreground hover:text-foreground transition-colors py-2.5 border-b border-border/50"
+>
+  Home
+</a>
+          <a
+            href="/#how-it-works"
+            onClick={() => setMenuOpen(false)}
+            className="block text-sm font-medium text-muted-foreground hover:text-foreground transition-colors py-2.5 border-b border-border/50"
+          >
+            How it Works
+          </a>
+          <Link href="/pricing" onClick={() => setMenuOpen(false)}>
+            <span className="block text-sm font-medium text-muted-foreground hover:text-foreground transition-colors py-2.5 border-b border-border/50">
+              Pricing
+            </span>
+          </Link>
+          <div className="flex flex-col gap-2 pt-3">
+            <Link href="/login" onClick={() => setMenuOpen(false)}>
+              <Button variant="ghost" size="sm" className="w-full text-muted-foreground hover:text-foreground">
+                Sign In
+              </Button>
+            </Link>
+            <Link href="/register" onClick={() => setMenuOpen(false)}>
+              <Button
+                size="sm"
+                className="w-full bg-gradient-to-r from-violet-600 to-fuchsia-500 hover:from-violet-700 hover:to-fuchsia-600 text-white border-0"
+              >
+                Get Started
+              </Button>
+            </Link>
+          </div>
         </div>
       </div>
     </nav>
@@ -83,12 +132,10 @@ export function Footer() {
   return (
     <footer className="border-t border-border bg-card/50 mt-24">
       <div className="container mx-auto px-6 py-12 md:py-16">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-12">
+        <div className="grid grid-cols-1 md:grid-cols-5 gap-12">
           <div className="col-span-1 md:col-span-2">
             <div className="flex items-center gap-3 mb-4">
-              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-violet-600 to-fuchsia-500 flex items-center justify-center">
-                <span className="font-bold text-white text-sm">V</span>
-              </div>
+              <img src="/logo.png" alt="VConnectHub" className="h-9 w-auto" />
               <span className="text-lg font-bold tracking-tight text-foreground">VConnectHub</span>
             </div>
             <p className="text-muted-foreground text-sm leading-relaxed max-w-xs">
@@ -97,27 +144,36 @@ export function Footer() {
           </div>
 
           <div>
-            <h4 className="font-semibold text-foreground mb-4 text-sm">Product</h4>
+            <h4 className="font-semibold text-foreground mb-4 text-sm">Products</h4>
             <ul className="space-y-3 text-muted-foreground text-sm">
-              <li><a href="#" className="hover:text-primary transition-colors">Pricing</a></li>
-              <li><a href="#" className="hover:text-primary transition-colors">Supported Services</a></li>
-              <li><a href="#" className="hover:text-primary transition-colors">API Documentation</a></li>
+              <li><Link href="/numbers" className="hover:text-primary transition-colors">Virtual Numbers</Link></li>
+              <li><Link href="/pricing" className="hover:text-primary transition-colors">Pricing</Link></li>
+              <li><a href="/#how-it-works" className="hover:text-primary transition-colors">How It Works</a></li>
+              <li><Link href="/services" className="hover:text-primary transition-colors">Supported Services</Link></li>
             </ul>
           </div>
 
           <div>
-            <h4 className="font-semibold text-foreground mb-4 text-sm">Legal</h4>
+            <h4 className="font-semibold text-foreground mb-4 text-sm">Company</h4>
             <ul className="space-y-3 text-muted-foreground text-sm">
-              <li><a href="#" className="hover:text-primary transition-colors">Terms of Service</a></li>
+              <li><a href="#" className="hover:text-primary transition-colors">About Us</a></li>
               <li><a href="#" className="hover:text-primary transition-colors">Privacy Policy</a></li>
+              <li><a href="#" className="hover:text-primary transition-colors">Terms of Service</a></li>
+            </ul>
+          </div>
+
+          <div>
+            <h4 className="font-semibold text-foreground mb-4 text-sm">Support</h4>
+            <ul className="space-y-3 text-muted-foreground text-sm">
+              <li><a href="#" className="hover:text-primary transition-colors">Contact Us</a></li>
               <li><a href="#" className="hover:text-primary transition-colors">Refund Policy</a></li>
+              <li><a href="#" className="hover:text-primary transition-colors">FAQ</a></li>
             </ul>
           </div>
         </div>
 
-        <div className="mt-12 pt-8 border-t border-border flex flex-col md:flex-row items-center justify-between text-sm text-muted-foreground gap-4">
+        <div className="mt-12 pt-8 border-t border-border flex justify-center text-sm text-muted-foreground">
           <p>© {new Date().getFullYear()} VConnectHub. All rights reserved.</p>
-          <span>Built in Lagos, Nigeria 🇳🇬</span>
         </div>
       </div>
     </footer>
