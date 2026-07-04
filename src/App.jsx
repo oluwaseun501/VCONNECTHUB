@@ -23,6 +23,7 @@ import SetPin from "@/pages/set-pin";
 import SupportChat from "@/components/ui/support-chat";
 import Transfer from "@/pages/transfer";
 import PurchaseNumber from "@/pages/purchase-number";
+import WalletVerify from "@/pages/wallet-verify";
 
 const queryClient = new QueryClient();
 
@@ -57,6 +58,7 @@ function Router() {
         <Route path="/settings"        component={(props) => <AnimatedRoute component={Settings}        {...props} />} />
         <Route path="/purchase-number" component={(props) => <AnimatedRoute component={PurchaseNumber}  {...props} />} />
         <Route                         component={(props) => <AnimatedRoute component={NotFound}        {...props} />} />
+        <Route path="/wallet/verify"   component={(props) => <AnimatedRoute component={WalletVerify}   {...props} />} />
       </Switch>
     </AnimatePresence>
   );

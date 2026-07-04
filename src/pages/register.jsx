@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useLocation } from "wouter";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -8,6 +8,7 @@ import { User, Mail, Lock, Eye, EyeOff, Check, ShieldCheck, ArrowLeft, Loader2 }
 import AnimatedOrbs from "@/components/ui/animated-orbs";
 import { useAuth } from "@/contexts/AuthContext";
 import { GoogleLogin } from "@react-oauth/google";
+import { useToast } from "@/hooks/use-toast";
 
 const schema = z
   .object({
@@ -26,8 +27,12 @@ export default function Register() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
   const [serverError, setServerError] = useState("");
+  const [registered, setRegistered] = useState(false);
+  const [countdown, setCountdown] = useState(4);
   const [, setLocation] = useLocation();
   const { register: registerUser, googleLogin } = useAuth();
+  const { toast } = useToast();
+  const [isGoogleLoading, setIsGoogleLoading] = useState(false);
 
   const {
     register,
@@ -43,27 +48,100 @@ export default function Register() {
   const agreed = watch("agreed");
 
   const handleGoogleSuccess = async (credential) => {
-    setServerError("");
-    try {
-      await googleLogin(credential);
-      setTimeout(() => setLocation("/dashboard"), 500);
-    } catch (err) {
-      const msg = err?.response?.data?.message || "Google sign-in failed. Please try again.";
-      setServerError(msg);
-    }
-  };
+  setServerError("");
+  setIsGoogleLoading(true);
+  try {
+    await googleLogin(credential);
+    toast({
+      description: (
+        <div className="flex items-center gap-2.5">
+          <div className="w-6 h-6 rounded-full bg-emerald-500 flex items-center justify-center flex-shrink-0">
+            <svg className="w-3.5 h-3.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+            </svg>
+          </div>
+          <span className="font-semibold">Welcome to VConnectHub!</span>
+        </div>
+      ),
+      duration: 3000,
+    });
+    setRegistered(true);
+  } catch (err) {
+    const msg = err?.response?.data?.message || "Google sign-in failed. Please try again.";
+    setServerError(msg);
+  } finally {
+    setIsGoogleLoading(false);
+  }
+};
 
   const onSubmit = async (data) => {
     setServerError("");
     try {
       await registerUser(data.name, data.email, data.password);
-      setLocation("/dashboard");
+      toast({
+        description: (
+          <div className="flex items-center gap-2.5">
+            <div className="w-6 h-6 rounded-full bg-emerald-500 flex items-center justify-center flex-shrink-0">
+              <svg className="w-3.5 h-3.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+              </svg>
+            </div>
+            <span className="font-semibold">Welcome to VConnectHub!</span>
+          </div>
+        ),
+        duration: 3000,
+      });
+      setRegistered(true);
     } catch (err) {
       const msg =
         err?.response?.data?.message || "Registration failed. Please try again.";
       setServerError(msg);
     }
   };
+
+  useEffect(() => {
+    if (!registered) return;
+    if (countdown <= 0) {
+      setLocation("/dashboard");
+      return;
+    }
+    const t = setTimeout(() => setCountdown((c) => c - 1), 1000);
+    return () => clearTimeout(t);
+  }, [registered, countdown, setLocation]);
+
+  if (registered) {
+    return (
+      <div className="min-h-screen flex flex-col relative overflow-hidden bg-violet-50 dark:bg-[#080b14] transition-colors duration-300">
+        <AnimatedOrbs />
+        <div className="relative z-10 flex-1 flex items-center justify-center px-4">
+          <div className="w-full max-w-md bg-white/80 dark:bg-white/5 backdrop-blur-xl border border-gray-200/80 dark:border-white/10 rounded-2xl shadow-xl dark:shadow-2xl p-8 text-center space-y-5">
+            <div className="w-20 h-20 rounded-full bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center mx-auto">
+              <svg className="w-10 h-10 text-emerald-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </div>
+            <div>
+              <h2 className="text-xl font-bold text-gray-900 dark:text-white">
+                Account Created Successfully!
+              </h2>
+              <p className="text-gray-500 dark:text-white/50 text-sm mt-1">
+                Welcome to VConnectHub. Taking you to your dashboard…
+              </p>
+            </div>
+            <button
+              onClick={() => setLocation("/dashboard")}
+              className="w-full h-11 rounded-xl bg-gradient-to-r from-violet-600 to-fuchsia-500 text-white font-semibold text-sm shadow-lg shadow-violet-500/25 hover:opacity-90 transition-all"
+            >
+              Go to Dashboard
+            </button>
+            <p className="text-xs text-gray-400 dark:text-white/30">
+              Redirecting automatically in {countdown}s…
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex flex-col relative overflow-hidden bg-violet-50 dark:bg-[#080b14] transition-colors duration-300">
@@ -236,45 +314,45 @@ export default function Register() {
             </div>
           </div>
 
-          {/* Google — overlay GoogleLogin (ID token) over our styled button */}
-          <div className="relative w-full h-11">
-            <button
-              type="button"
-              className="w-full h-11 rounded-xl bg-gray-50 dark:bg-white/5 border border-gray-200 dark:border-white/10 text-gray-700 dark:text-white/80 text-sm font-medium hover:bg-gray-100 dark:hover:bg-white/10 hover:border-gray-300 dark:hover:border-white/20 transition-all flex items-center justify-center gap-3"
-            >
-              <SiGoogle className="w-4 h-4" />
-              Continue with Google
-            </button>
-            <div className="absolute inset-0 opacity-0 overflow-hidden rounded-xl cursor-pointer">
-              <GoogleLogin
-                onSuccess={(r) => handleGoogleSuccess(r.credential)}
-                onError={() => setServerError("Google sign-in failed. Please try again.")}
-                width="500"
-              />
-            </div>
-          </div>
+        {/* Google — overlay GoogleLogin (ID token) over our styled button */}
+<div className="relative w-full h-11">
+  <button
+    type="button"
+    disabled={isGoogleLoading}
+    className="w-full h-11 rounded-xl bg-gray-50 dark:bg-white/5 border border-gray-200 dark:border-white/10 text-gray-700 dark:text-white/80 text-sm font-medium hover:bg-gray-100 dark:hover:bg-white/10 hover:border-gray-300 dark:hover:border-white/20 transition-all flex items-center justify-center gap-3 disabled:opacity-60 disabled:cursor-not-allowed"
+  >
+    {isGoogleLoading ? (
+      <>
+        <Loader2 className="w-4 h-4 animate-spin" />
+        Signing in…
+      </>
+    ) : (
+      <>
+        <SiGoogle className="w-4 h-4" />
+        Continue with Google
+      </>
+    )}
+  </button>
+  {!isGoogleLoading && (
+    <div className="absolute inset-0 opacity-0 overflow-hidden rounded-xl cursor-pointer">
+      <GoogleLogin
+        onSuccess={(r) => handleGoogleSuccess(r.credential)}
+        onError={() => setServerError("Google sign-in failed. Please try again.")}
+        width="500"
+      />
+    </div>
+  )}
+</div>
 
           {/* Link */}
           <p className="text-center text-sm text-gray-500 dark:text-white/40">
             Already have an account?{" "}
             <Link href="/login">
-              <span className="text-violet-600 dark:text-violet-400 hover:underline font-medium cursor-pointer transition-colors">Sign in</span>
+              <span className="text-violet-600 dark:text-violet-400 hover:underline font-medium cursor-pointer transition-colors">
+                Sign in
+              </span>
             </Link>
           </p>
-
-          {/* Need help */}
-          <div className="border border-gray-200 dark:border-white/10 rounded-xl p-4 space-y-3 bg-gray-50/50 dark:bg-white/3">
-            <div>
-              <p className="text-sm font-semibold text-gray-800 dark:text-white/80">Need help?</p>
-              <p className="text-xs text-gray-500 dark:text-white/40">Our support team is here 24/7</p>
-            </div>
-            <button
-              onClick={() => window.dispatchEvent(new Event("open-support-chat"))}
-              className="w-full h-9 rounded-lg bg-white dark:bg-white/5 border border-gray-200 dark:border-white/10 text-gray-700 dark:text-white/70 text-sm font-medium hover:bg-gray-50 dark:hover:bg-white/10 hover:text-gray-900 dark:hover:text-white transition-all"
-            >
-              Contact Support
-            </button>
-          </div>
         </div>
       </div>
     </div>

@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from "react";
 import { Link } from "wouter";
 import { motion, AnimatePresence } from "framer-motion";
-import { List, Clock, CheckCircle2, XCircle, ShoppingCart, RefreshCw, Copy, Check } from "lucide-react";
+import { List, Clock, CheckCircle2, XCircle, ShoppingCart, RefreshCw, Copy, Check, Loader2 } from "lucide-react";
 import {
   SiWhatsapp, SiTelegram, SiTiktok, SiFacebook,
   SiInstagram, SiX, SiSnapchat, SiGmail, SiBinance, SiSignal,
 } from "react-icons/si";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
+import api from "@/lib/axios";
 
 const GLIDE = { duration: 0.7, ease: [0.22, 1, 0.36, 1] };
 
@@ -16,7 +17,7 @@ const SERVICE_ICONS = {
   tiktok:    { icon: SiTiktok,    color: "#010101" },
   facebook:  { icon: SiFacebook,  color: "#1877F2" },
   instagram: { icon: SiInstagram, color: "#E4405F" },
-twitter:   { icon: SiX,         color: "#000000" },
+  twitter:   { icon: SiX,         color: "#000000" },
   snapchat:  { icon: SiSnapchat,  color: "#FFFC00" },
   gmail:     { icon: SiGmail,     color: "#EA4335" },
   binance:   { icon: SiBinance,   color: "#F3BA2F" },
@@ -24,6 +25,7 @@ twitter:   { icon: SiX,         color: "#000000" },
 };
 
 function timeAgo(iso) {
+  if (!iso) return "";
   const diff = Date.now() - new Date(iso).getTime();
   const m = Math.floor(diff / 60000);
   if (m < 1)  return "just now";
@@ -31,6 +33,31 @@ function timeAgo(iso) {
   const h = Math.floor(m / 60);
   if (h < 24) return `${h}h ago`;
   return `${Math.floor(h / 24)}d ago`;
+}
+
+// Backend statuses are uppercase: PENDING, RECEIVED, FINISHED, CANCELED, TIMEOUT, BANNED
+function normalizeStatus(status) {
+  switch (status) {
+    case "PENDING":
+      return "waiting";
+    case "RECEIVED":
+    case "FINISHED":
+      return "received";
+    case "CANCELED":
+    case "TIMEOUT":
+    case "BANNED":
+      return "expired";
+    default:
+      return "waiting";
+  }
+}
+
+function getOtp(order) {
+  if (Array.isArray(order.sms) && order.sms.length > 0) {
+    const latest = order.sms[order.sms.length - 1];
+    return latest.code || latest.text || null;
+  }
+  return null;
 }
 
 function StatusBadge({ status }) {
@@ -52,10 +79,33 @@ export default function MyNumbers() {
   const [numbers, setNumbers] = useState([]);
   const [copied, setCopied]   = useState(null);
   const [filter, setFilter]   = useState("all");
+  const [loading, setLoading] = useState(true);
+  const [error, setError]     = useState("");
 
-  const load = () => {
-    const stored = JSON.parse(localStorage.getItem("purchased_numbers") || "[]");
-    setNumbers(stored);
+  const load = async () => {
+    setLoading(true);
+    setError("");
+    try {
+      const { data } = await api.get("/api/numbers/orders?page=1&limit=50");
+      const orders = data?.orders || [];
+      const mapped = orders.map((order) => ({
+        id: order._id || order.orderId,
+        orderId: order.orderId,
+        serviceId: order.product,
+        service: order.product,
+        country: order.country,
+        price: order.price,
+        number: order.phone,
+        status: normalizeStatus(order.status),
+        otp: getOtp(order),
+        purchasedAt: order.createdAt,
+      }));
+      setNumbers(mapped);
+    } catch (err) {
+      setError(err?.response?.data?.message || "Failed to load your numbers.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   useEffect(() => { load(); }, []);
@@ -92,8 +142,8 @@ export default function MyNumbers() {
             </div>
           </div>
           <div className="flex gap-2">
-            <button onClick={load} className="flex items-center gap-2 px-3 py-2 rounded-xl border border-border bg-card hover:bg-muted text-muted-foreground text-sm transition-all">
-              <RefreshCw className="w-4 h-4" />
+            <button onClick={load} disabled={loading} className="flex items-center gap-2 px-3 py-2 rounded-xl border border-border bg-card hover:bg-muted text-muted-foreground text-sm transition-all disabled:opacity-50">
+              <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin" : ""}`} />
               Refresh
             </button>
             <Link href="/purchase-number">
@@ -106,8 +156,24 @@ export default function MyNumbers() {
         </div>
       </motion.div>
 
+      {/* Error state */}
+      {error && (
+        <div className="mb-6 p-4 rounded-xl bg-red-500/10 border border-red-500/25 text-sm text-red-500 flex items-center gap-2">
+          <XCircle className="w-4 h-4 flex-shrink-0" />
+          {error}
+        </div>
+      )}
+
+      {/* Loading state */}
+      {loading && numbers.length === 0 && !error && (
+        <div className="flex items-center justify-center py-16 text-muted-foreground">
+          <Loader2 className="w-6 h-6 animate-spin mr-2" />
+          Loading your numbers…
+        </div>
+      )}
+
       {/* Filter tabs */}
-      {numbers.length > 0 && (
+      {!loading && numbers.length > 0 && (
         <div className="flex gap-2 mb-6 flex-wrap">
           {[
             { key: "all",      label: "All" },
@@ -134,7 +200,7 @@ export default function MyNumbers() {
       )}
 
       {/* Empty state */}
-      {numbers.length === 0 && (
+      {!loading && numbers.length === 0 && !error && (
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={GLIDE}
           className="bg-card border border-border rounded-2xl p-12 text-center shadow-sm"
         >
@@ -177,8 +243,8 @@ export default function MyNumbers() {
                   <div className="flex-1 min-w-0">
                     <div className="flex items-start justify-between gap-2 flex-wrap">
                       <div>
-                        <p className="font-semibold text-foreground">{entry.service}</p>
-                        <p className="text-xs text-muted-foreground">{entry.countryFlag} {entry.country} · ₦{entry.price?.toLocaleString()}</p>
+                        <p className="font-semibold text-foreground capitalize">{entry.service}</p>
+                        <p className="text-xs text-muted-foreground capitalize">{entry.country} · ₦{Number(entry.price || 0).toLocaleString()}</p>
                       </div>
                       <StatusBadge status={entry.status} />
                     </div>

@@ -1,3 +1,4 @@
+import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import React, { useState, useRef, useEffect } from "react";
 import { Link } from "wouter";
 import { motion, AnimatePresence } from "framer-motion";
@@ -157,6 +158,7 @@ export default function Transfer() {
   const stepIdx = steps.indexOf(step);
 
   return (
+    <DashboardLayout>
     <div className="max-w-lg mx-auto px-4 py-8">
 
       {/* Page header */}
@@ -419,7 +421,8 @@ export default function Transfer() {
             </div>
           </motion.div>
         )}
-      </AnimatePresence>
-    </div>
+           </AnimatePresence>
+      </div>
+    </DashboardLayout>
   );
 }
