@@ -79,6 +79,7 @@ export function PublicNavbar() {
         </div>
       </div>
 
+
       {/* Mobile menu — glide down effect */}
       <div
        className={`md:hidden overflow-hidden transition-all duration-500 ease-[cubic-bezier(0.4,0,0.2,1)] border-t ${
