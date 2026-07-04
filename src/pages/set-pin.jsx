@@ -1,11 +1,13 @@
 import React, { useState, useRef, useEffect } from "react";
 import { Link, useLocation } from "wouter";
-import { KeyRound, ShieldCheck, Eye, EyeOff, ArrowLeft, CheckCircle2 } from "lucide-react";
+import { KeyRound, ShieldCheck, Eye, EyeOff, ArrowLeft, CheckCircle2, Loader2 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { useAuth } from "@/contexts/AuthContext";
+import api from "@/lib/axios";
 
 const GLIDE = { duration: 0.9, ease: [0.22, 1, 0.36, 1] };
 
-/* ── Single 4-box PIN input row ── */
+/* ── Single 4-box PIN input row — your original component, unchanged ── */
 function PinInput({ value, onChange, label, disabled = false, reveal = false }) {
   const inputs = useRef([]);
 
@@ -41,7 +43,7 @@ function PinInput({ value, onChange, label, disabled = false, reveal = false }) 
         {[0, 1, 2, 3].map((i) => (
           <input
             key={i}
-            ref={(el) => (inputs.current[i] = el)}
+            ref={(el) => { inputs.current[i] = el; }}
             type={reveal ? "text" : "password"}
             inputMode="numeric"
             maxLength={1}
@@ -70,12 +72,16 @@ const STEP_CONFIRM = "confirm";
 const STEP_SUCCESS = "success";
 
 export default function SetPin() {
-  const pinAlreadySet = !!localStorage.getItem("txn_pin");
+  const { user, refreshUser } = useAuth();
+  // pinAlreadySet now comes from the real user object instead of localStorage
+  const pinAlreadySet = user?.hasPin ?? false;
+
   const [step, setStep]       = useState(STEP_NEW);
   const [newPin, setNewPin]   = useState("");
   const [confPin, setConfPin] = useState("");
   const [reveal, setReveal]   = useState(false);
   const [error, setError]     = useState("");
+  const [saving, setSaving]   = useState(false);
   const [, navigate]          = useLocation();
 
   /* Auto-advance when new PIN is filled */
@@ -89,15 +95,29 @@ export default function SetPin() {
   useEffect(() => {
     if (confPin.length === 4 && step === STEP_CONFIRM) {
       if (confPin === newPin) {
-        localStorage.setItem("txn_pin", confPin);
-        setError("");
-        setStep(STEP_SUCCESS);
+        savePin(confPin);
       } else {
         setError("PINs don't match. Try again.");
         setConfPin("");
       }
     }
   }, [confPin, newPin, step]);
+
+  /* Save PIN to backend instead of localStorage */
+  const savePin = async (pin) => {
+    setSaving(true);
+    setError("");
+    try {
+      await api.post("/api/users/set-pin", { pin });
+      await refreshUser(); // update user.hasPin in context
+      setStep(STEP_SUCCESS);
+    } catch (err) {
+      setError(err?.response?.data?.message || "Failed to save PIN. Please try again.");
+      setConfPin("");
+    } finally {
+      setSaving(false);
+    }
+  };
 
   const handleReset = () => {
     setNewPin("");
@@ -216,9 +236,17 @@ export default function SetPin() {
                       onChange={step === STEP_NEW ? setNewPin : setConfPin}
                       reveal={reveal}
                       label={step === STEP_NEW ? "Enter new PIN" : "Confirm PIN"}
+                      disabled={saving}
                     />
                   </motion.div>
                 </AnimatePresence>
+
+                {/* Saving indicator */}
+                {saving && (
+                  <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
+                    <Loader2 className="w-4 h-4 animate-spin" /> Saving your PIN…
+                  </div>
+                )}
 
                 {/* Error */}
                 <AnimatePresence>

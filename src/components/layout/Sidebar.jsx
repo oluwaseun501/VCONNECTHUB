@@ -2,6 +2,7 @@ import React from "react";
 import { Link, useLocation } from "wouter";
 import { LayoutDashboard, Phone, Wallet, Settings, LogOut, KeyRound, ArrowLeftRight, ShoppingCart, List, X } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useAuth } from "@/contexts/AuthContext";
 
 const links = [
   { name: "Dashboard",        href: "/dashboard",       icon: LayoutDashboard },
@@ -15,7 +16,9 @@ const links = [
 
 export function Sidebar({ open, onClose }) {
   const [location] = useLocation();
-  const pinSet = !!localStorage.getItem("txn_pin");
+  // pinSet now comes from the real user object instead of localStorage
+  const { user, logout } = useAuth();
+  const pinSet = user?.hasPin ?? false;
 
   const SidebarContent = () => (
     <>
@@ -59,12 +62,13 @@ export function Sidebar({ open, onClose }) {
       </nav>
 
       <div className="p-3 border-t border-border">
-        <Link href="/" onClick={onClose}>
+        {/* logout() clears vn_token + vn_user and redirects to /login */}
+        <button onClick={() => { onClose(); logout(); }} className="w-full">
           <div className="flex items-center gap-3 px-4 py-3 rounded-xl text-muted-foreground hover:bg-red-500/10 hover:text-red-500 dark:hover:text-red-400 transition-all cursor-pointer text-sm font-medium">
             <LogOut size={18} />
             <span>Sign Out</span>
           </div>
-        </Link>
+        </button>
       </div>
     </>
   );
