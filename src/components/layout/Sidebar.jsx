@@ -76,7 +76,7 @@ export function Sidebar({ open, onClose }) {
   return (
     <>
       {/* Desktop sidebar — always visible */}
-      <div className="w-64 h-screen hidden md:flex flex-col fixed left-0 top-0 z-40 bg-card border-r border-border">
+      <div className="w-64 h-dvh  hidden md:flex flex-col fixed left-0 top-0 z-40 bg-card border-r border-border">
         <SidebarContent />
       </div>
 
@@ -90,7 +90,7 @@ export function Sidebar({ open, onClose }) {
 
       {/* Mobile drawer — slides in from left */}
       <div
-        className={`fixed left-0 top-0 h-screen w-72 z-50 bg-card border-r border-border flex flex-col transition-transform duration-500 ease-[cubic-bezier(0.4,0,0.2,1)] md:hidden ${
+        className={`fixed left-0 top-0 h-dvh  w-72 z-50 bg-card border-r border-border flex flex-col transition-transform duration-500 ease-[cubic-bezier(0.4,0,0.2,1)] md:hidden ${
           open ? "translate-x-0" : "-translate-x-full"
         }`}
       >

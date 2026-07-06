@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import {
   ShieldCheck, Zap, Globe2, ArrowRight, Check,
   RefreshCw, Copy, CreditCard
-} from "lucide-react";
+} from "lucide-react"; 
 import {
   motion, AnimatePresence,
   useScroll, useTransform, useSpring, useInView
@@ -338,6 +338,16 @@ function SectionHeading({ badge, title, subtitle }) {
 
 export default function LandingPage() {
   const heroRef = useRef(null);
+
+    useEffect(() => {
+    if (window.location.hash === "#how-it-works") {
+      const el = document.getElementById("how-it-works");
+      if (el) {
+        setTimeout(() => el.scrollIntoView({ behavior: "smooth" }), 100);
+      }
+    }
+  }, []);
+  
   const { scrollYProgress } = useScroll({ target: heroRef, offset: ["start start", "end start"] });
 
   const blob1Y      = useSpring(useTransform(scrollYProgress, [0, 1], [0, -120]), { stiffness: 60, damping: 20 });

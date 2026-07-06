@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Link } from "wouter";
+import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Moon, Sun, Menu, X } from "lucide-react";
 import { useTheme } from "next-themes";
@@ -9,6 +9,18 @@ export function PublicNavbar() {
   const [mounted, setMounted] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+
+    const [location, navigate] = useLocation();
+
+  const handleHowItWorks = (e) => {
+    e.preventDefault();
+    setMenuOpen(false);
+    if (location === "/") {
+      document.getElementById("how-it-works")?.scrollIntoView({ behavior: "smooth" });
+    } else {
+      navigate("/#how-it-works");
+    }
+  };
 
   useEffect(() => {
     setMounted(true);
@@ -37,8 +49,8 @@ export function PublicNavbar() {
         {/* Desktop nav */}
         <div className="flex items-center gap-2">
           <div className="hidden md:flex items-center gap-6 text-sm font-medium mr-2 text-muted-foreground">
-           <a href="/" className="hover:text-foreground transition-colors">Home</a>
-            <a href="/#how-it-works" className="hover:text-foreground transition-colors">How it Works</a>
+           <Link href="/" className="hover:text-foreground transition-colors">Home</Link>
+           <a href="/#how-it-works" onClick={handleHowItWorks} className="hover:text-foreground transition-colors">How it Works</a>
             <Link href="/pricing" className="hover:text-foreground transition-colors">Pricing</Link>
           </div>
 
@@ -89,20 +101,20 @@ export function PublicNavbar() {
         } bg-background/95 backdrop-blur-xl`}
       >
         <div className="container mx-auto px-6 py-4 flex flex-col gap-1">
-          <a
+  <Link
   href="/"
   onClick={() => setMenuOpen(false)}
   className="block text-sm font-medium text-muted-foreground hover:text-foreground transition-colors py-2.5 border-b border-border/50"
 >
   Home
+</Link>
+         <a
+  href="/#how-it-works"
+  onClick={handleHowItWorks}
+  className="block text-sm font-medium text-muted-foreground hover:text-foreground transition-colors py-2.5 border-b border-border/50"
+>
+  How it Works
 </a>
-          <a
-            href="/#how-it-works"
-            onClick={() => setMenuOpen(false)}
-            className="block text-sm font-medium text-muted-foreground hover:text-foreground transition-colors py-2.5 border-b border-border/50"
-          >
-            How it Works
-          </a>
           <Link href="/pricing" onClick={() => setMenuOpen(false)}>
             <span className="block text-sm font-medium text-muted-foreground hover:text-foreground transition-colors py-2.5 border-b border-border/50">
               Pricing
@@ -130,6 +142,17 @@ export function PublicNavbar() {
 }
 
 export function Footer() {
+  const [, navigate] = useLocation();
+
+  const handleHowItWorks = (e) => {
+    e.preventDefault();
+    if (window.location.pathname === "/") {
+      document.getElementById("how-it-works")?.scrollIntoView({ behavior: "smooth" });
+    } else {
+      navigate("/#how-it-works");
+    }
+  };
+
   return (
     <footer className="border-t border-border bg-card/50 mt-24">
       <div className="container mx-auto px-6 py-12 md:py-16">
@@ -149,7 +172,7 @@ export function Footer() {
             <ul className="space-y-3 text-muted-foreground text-sm">
               <li><Link href="/numbers" className="hover:text-primary transition-colors">Virtual Numbers</Link></li>
               <li><Link href="/pricing" className="hover:text-primary transition-colors">Pricing</Link></li>
-              <li><a href="/#how-it-works" className="hover:text-primary transition-colors">How It Works</a></li>
+             <li><a href="/#how-it-works" onClick={handleHowItWorks} className="hover:text-primary transition-colors">How It Works</a></li>
               <li><Link href="/services" className="hover:text-primary transition-colors">Supported Services</Link></li>
             </ul>
           </div>
