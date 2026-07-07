@@ -88,7 +88,7 @@ export default function Transfer() {
     setLookupError("");
     setLookingUp(true);
     try {
-      const { data } = await api.get(`/api/users/lookup?email=${encodeURIComponent(email)}`);
+     const { data } = await api.get(`/api/wallet/lookup-user?email=${encodeURIComponent(email)}`);
       setRecipient({ name: data.name || data.email, email: data.email || email });
       setStep(STEP_AMOUNT);
     } catch (err) {
