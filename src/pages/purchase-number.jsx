@@ -494,7 +494,7 @@ export default function PurchaseNumber() {
                                   </div>
                                   <div className="flex-1 min-w-0">
                                     <p className="text-sm font-semibold text-foreground truncate">{service.name}</p>
-                                    <p className="text-xs font-bold text-violet-600 dark:text-violet-400">{Number(service.price).toLocaleString()} pts</p>
+                                    <p className="text-xs font-bold text-violet-600 dark:text-violet-400">₦{Number(service.price).toLocaleString()}</p>
                                   </div>
                                   {selected && <div className="w-2.5 h-2.5 rounded-full bg-violet-500 flex-shrink-0" />}
                                 </button>
@@ -527,7 +527,7 @@ export default function PurchaseNumber() {
                                   </div>
                                   <div className="flex-1 min-w-0">
                                     <p className="text-sm font-semibold text-foreground truncate">{service.name}</p>
-                                    <p className="text-xs font-bold text-violet-600 dark:text-violet-400">{Number(service.price).toLocaleString()} pts</p>
+                                    <p className="text-xs font-bold text-violet-600 dark:text-violet-400">₦{Number(service.price).toLocaleString()}</p>
                                   </div>
                                   {selected && <div className="w-2.5 h-2.5 rounded-full bg-violet-500 flex-shrink-0" />}
                                 </button>

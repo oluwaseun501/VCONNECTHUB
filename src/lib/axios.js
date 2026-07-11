@@ -23,7 +23,8 @@ api.interceptors.response.use(
     if (error.response?.status === 401) {
       localStorage.removeItem("vn_token");
       localStorage.removeItem("vn_user");
-      window.location.href = "/login";
+      const isAdmin = window.location.pathname.startsWith("/admin");
+      window.location.href = isAdmin ? "/admin/login" : "/login";
     }
     return Promise.reject(error);
   }

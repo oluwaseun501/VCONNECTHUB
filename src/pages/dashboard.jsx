@@ -413,7 +413,7 @@ export default function Dashboard() {
                                       {Icon ? <Icon className="w-6 h-6" style={{ color: service.color }} /> : <span className="text-lg font-bold" style={{ color: service.color }}>{service.name[0]}</span>}
                                     </div>
                                     <div className="font-medium text-sm">{service.name}</div>
-                                    <div className="text-primary font-bold mt-1 text-xs">{Number(service.price).toLocaleString()} pts</div>
+                                    <div className="text-primary font-bold mt-1 text-xs">₦{Number(service.price).toLocaleString()}</div>
                                   </div>
                                 );
                               })}
@@ -438,7 +438,7 @@ export default function Dashboard() {
                                       {Icon ? <Icon className="w-6 h-6" style={{ color: service.color }} /> : <span className="text-lg font-bold" style={{ color: service.color }}>{service.name[0]}</span>}
                                     </div>
                                     <div className="font-medium text-sm">{service.name}</div>
-                                    <div className="text-primary font-bold mt-1 text-xs">{Number(service.price).toLocaleString()} pts</div>
+                                    <div className="text-primary font-bold mt-1 text-xs">₦{Number(service.price).toLocaleString()}</div>
                                   </div>
                                 );
                               })}

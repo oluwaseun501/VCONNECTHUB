@@ -131,3 +131,15 @@
 .hover-glow:hover {
   box-shadow: 0 0 25px 2px rgba(168, 85, 247, 0.6);
 }
+
+/* ── Admin dashboard additions ── */
+.gradient-text {
+  @apply bg-clip-text text-transparent bg-gradient-to-r from-primary to-secondary;
+}
+
+.glow-dot {
+  box-shadow: 0 0 10px 1px currentColor;
+}
+
+.hide-scrollbar::-webkit-scrollbar { display: none; }
+.hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
