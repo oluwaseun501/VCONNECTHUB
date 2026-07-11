@@ -33,7 +33,7 @@ import AdminDash from "@/pages/adminDashboard";
 import Users from "@/pages/users";
 import Transactions from "@/pages/allTransactions";
 import AdminSettings from "@/pages/adminSettings";
-import NumberPurchased from "@/pages/NumbersPurchased";
+import NumberPurchased from "@/pages/numbersPurchased";
 import UserDetails from "@/pages/userDetails";
 import AdminProviders from "@/pages/adminProviders";
 import AdminPricing from "@/pages/adminPricing";
