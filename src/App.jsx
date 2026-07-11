@@ -66,14 +66,12 @@ function ProtectedRoute({ component: Component }) {
 
 /* ── Guard: redirect to /admin/login if not logged in as admin ── */
 function ProtectedAdminRoute({ component: Component }) {
-  const [, setLocation] = useLocation();
-  const isAdmin = localStorage.getItem("admin_mock_auth") === "true";
+  const token = localStorage.getItem("adminToken");
 
-  useEffect(() => {
-    if (!isAdmin) setLocation("/admin/login");
-  }, [isAdmin, setLocation]);
+  if (!token) {
+    return <Redirect to="/admin/login" />;
+  }
 
-  if (!isAdmin) return null;
   return <AnimatedRoute component={Component} />;
 }
 
