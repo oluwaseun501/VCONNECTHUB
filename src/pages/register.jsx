@@ -51,7 +51,8 @@ export default function Register() {
   setServerError("");
   setIsGoogleLoading(true);
   try {
-    await googleLogin(credential);
+    const result = await googleLogin(credential);
+
     toast({
       description: (
         <div className="flex items-center gap-2.5">
@@ -60,12 +61,19 @@ export default function Register() {
               <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
             </svg>
           </div>
-          <span className="font-semibold">Welcome to VConnectHub!</span>
+          <span className="font-semibold">
+            {result?.isNewUser ? "Welcome to VConnectHub!" : "Welcome back!"}
+          </span>
         </div>
       ),
       duration: 3000,
     });
-    setRegistered(true);
+
+    if (result?.isNewUser) {
+      setRegistered(true); 
+    } else {
+      setLocation("/dashboard"); 
+    }
   } catch (err) {
     const msg = err?.response?.data?.message || "Google sign-in failed. Please try again.";
     setServerError(msg);

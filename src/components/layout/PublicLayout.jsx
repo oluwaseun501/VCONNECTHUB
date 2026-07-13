@@ -9,8 +9,7 @@ export function PublicNavbar() {
   const [mounted, setMounted] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
-
-    const [location, navigate] = useLocation();
+  const [location, navigate] = useLocation();
 
   const handleHowItWorks = (e) => {
     e.preventDefault();
@@ -49,8 +48,8 @@ export function PublicNavbar() {
         {/* Desktop nav */}
         <div className="flex items-center gap-2">
           <div className="hidden md:flex items-center gap-6 text-sm font-medium mr-2 text-muted-foreground">
-           <Link href="/" className="hover:text-foreground transition-colors">Home</Link>
-           <a href="/#how-it-works" onClick={handleHowItWorks} className="hover:text-foreground transition-colors">How it Works</a>
+            <Link href="/" className="hover:text-foreground transition-colors">Home</Link>
+            <a href="/#how-it-works" onClick={handleHowItWorks} className="hover:text-foreground transition-colors">How it Works</a>
             <Link href="/pricing" className="hover:text-foreground transition-colors">Pricing</Link>
           </div>
 
@@ -80,7 +79,7 @@ export function PublicNavbar() {
             </Button>
           </Link>
 
-          {/* Hamburger button — mobile only */}
+          {/* Hamburger — mobile only */}
           <button
             className="md:hidden p-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
             onClick={() => setMenuOpen(!menuOpen)}
@@ -91,30 +90,29 @@ export function PublicNavbar() {
         </div>
       </div>
 
-
-      {/* Mobile menu — glide down effect */}
+      {/* Mobile menu */}
       <div
-       className={`md:hidden overflow-hidden transition-all duration-500 ease-[cubic-bezier(0.4,0,0.2,1)] border-t ${
+        className={`md:hidden overflow-hidden transition-all duration-500 ease-[cubic-bezier(0.4,0,0.2,1)] border-t ${
           menuOpen
             ? "max-h-96 opacity-100 border-border"
             : "max-h-0 opacity-0 border-transparent"
         } bg-background/95 backdrop-blur-xl`}
       >
         <div className="container mx-auto px-6 py-4 flex flex-col gap-1">
-  <Link
-  href="/"
-  onClick={() => setMenuOpen(false)}
-  className="block text-sm font-medium text-muted-foreground hover:text-foreground transition-colors py-2.5 border-b border-border/50"
->
-  Home
-</Link>
-         <a
-  href="/#how-it-works"
-  onClick={handleHowItWorks}
-  className="block text-sm font-medium text-muted-foreground hover:text-foreground transition-colors py-2.5 border-b border-border/50"
->
-  How it Works
-</a>
+          <Link
+            href="/"
+            onClick={() => setMenuOpen(false)}
+            className="block text-sm font-medium text-muted-foreground hover:text-foreground transition-colors py-2.5 border-b border-border/50"
+          >
+            Home
+          </Link>
+          <a
+            href="/#how-it-works"
+            onClick={handleHowItWorks}
+            className="block text-sm font-medium text-muted-foreground hover:text-foreground transition-colors py-2.5 border-b border-border/50"
+          >
+            How it Works
+          </a>
           <Link href="/pricing" onClick={() => setMenuOpen(false)}>
             <span className="block text-sm font-medium text-muted-foreground hover:text-foreground transition-colors py-2.5 border-b border-border/50">
               Pricing
@@ -157,41 +155,80 @@ export function Footer() {
     <footer className="border-t border-border bg-card/50 mt-24">
       <div className="container mx-auto px-6 py-12 md:py-16">
         <div className="grid grid-cols-1 md:grid-cols-5 gap-12">
+          {/* Brand */}
           <div className="col-span-1 md:col-span-2">
             <div className="flex items-center gap-3 mb-4">
               <img src="/logo.png" alt="VConnectHub" className="h-9 w-auto" />
               <span className="text-lg font-bold tracking-tight text-foreground">VConnectHub</span>
             </div>
             <p className="text-muted-foreground text-sm leading-relaxed max-w-xs">
-              Premium virtual numbers and instant OTPs for Nigerians who value privacy and speed.
+              Premium virtual numbers and instant OTPs for people who value privacy and speed.
             </p>
           </div>
 
+          {/* Products */}
           <div>
             <h4 className="font-semibold text-foreground mb-4 text-sm">Products</h4>
             <ul className="space-y-3 text-muted-foreground text-sm">
-              <li><Link href="/numbers" className="hover:text-primary transition-colors">Virtual Numbers</Link></li>
-              <li><Link href="/pricing" className="hover:text-primary transition-colors">Pricing</Link></li>
-             <li><a href="/#how-it-works" onClick={handleHowItWorks} className="hover:text-primary transition-colors">How It Works</a></li>
-              <li><Link href="/services" className="hover:text-primary transition-colors">Supported Services</Link></li>
+              <li>
+                <Link href="/purchase-number" className="hover:text-primary transition-colors">
+                  Virtual Numbers
+                </Link>
+              </li>
+              <li>
+                <Link href="/pricing" className="hover:text-primary transition-colors">
+                  Pricing
+                </Link>
+              </li>
+              <li>
+                <a href="/#how-it-works" onClick={handleHowItWorks} className="hover:text-primary transition-colors">
+                  How It Works
+                </a>
+              </li>
             </ul>
           </div>
 
+          {/* Company */}
           <div>
             <h4 className="font-semibold text-foreground mb-4 text-sm">Company</h4>
             <ul className="space-y-3 text-muted-foreground text-sm">
-              <li><a href="#" className="hover:text-primary transition-colors">About Us</a></li>
-              <li><a href="#" className="hover:text-primary transition-colors">Privacy Policy</a></li>
-              <li><a href="#" className="hover:text-primary transition-colors">Terms of Service</a></li>
+              <li>
+                <Link href="/about" className="hover:text-primary transition-colors">
+                  About Us
+                </Link>
+              </li>
+              <li>
+                <Link href="/privacy" className="hover:text-primary transition-colors">
+                  Privacy Policy
+                </Link>
+              </li>
+              <li>
+                <Link href="/terms" className="hover:text-primary transition-colors">
+                  Terms of Service
+                </Link>
+              </li>
             </ul>
           </div>
 
+          {/* Support */}
           <div>
             <h4 className="font-semibold text-foreground mb-4 text-sm">Support</h4>
             <ul className="space-y-3 text-muted-foreground text-sm">
-              <li><a href="#" className="hover:text-primary transition-colors">Contact Us</a></li>
-              <li><a href="#" className="hover:text-primary transition-colors">Refund Policy</a></li>
-              <li><a href="#" className="hover:text-primary transition-colors">FAQ</a></li>
+              <li>
+                <Link href="/contact" className="hover:text-primary transition-colors">
+                  Contact Us
+                </Link>
+              </li>
+              <li>
+                <Link href="/refund-policy" className="hover:text-primary transition-colors">
+                  Refund Policy
+                </Link>
+              </li>
+              <li>
+                <Link href="/faq" className="hover:text-primary transition-colors">
+                  FAQ
+                </Link>
+              </li>
             </ul>
           </div>
         </div>

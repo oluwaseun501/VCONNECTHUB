@@ -3,7 +3,13 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ThemeProvider as NextThemesProvider } from "next-themes";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { Route, Switch, Router as WouterRouter, Redirect, useLocation } from "wouter";
+import {
+  Route,
+  Switch,
+  Router as WouterRouter,
+  Redirect,
+  useLocation,
+} from "wouter";
 import { AnimatePresence, motion } from "framer-motion";
 import { ScrollToTop } from "@/components/ScrollToTop";
 import { PageLoader } from "@/components/PageLoader";
@@ -38,7 +44,12 @@ import UserDetails from "@/pages/userDetails";
 import AdminProviders from "@/pages/adminProviders";
 import AdminPricing from "@/pages/adminPricing";
 
-
+import AboutUs from "@/pages/about";
+import PrivacyPolicy from "@/pages/privacy";
+import RefundPolicy from "@/pages/refund-policy";
+import TermsOfService from "@/pages/terms";
+import FAQ from "@/pages/faq";
+import ContactUs from "@/pages/contact";
 
 const queryClient = new QueryClient();
 
@@ -50,7 +61,12 @@ const pageVariants = {
 
 function AnimatedRoute({ component: Component }) {
   return (
-    <motion.div variants={pageVariants} initial="initial" animate="animate" exit="exit">
+    <motion.div
+      variants={pageVariants}
+      initial="initial"
+      animate="animate"
+      exit="exit"
+    >
       <Component />
     </motion.div>
   );
@@ -86,10 +102,10 @@ function MaintenanceGate({ children }) {
       setStatus({ maintenanceMode: false });
       return;
     }
-  
-getMaintenanceStatus()
-  .then((data) => setStatus(data))
-  .catch(() => setStatus({ maintenanceMode: false }));
+
+    getMaintenanceStatus()
+      .then((data) => setStatus(data))
+      .catch(() => setStatus({ maintenanceMode: false }));
   }, [location]);
 
   // Still loading — render nothing briefly (PageLoader is already shown by App)
@@ -108,39 +124,185 @@ function Router() {
     <MaintenanceGate>
       <AnimatePresence mode="wait">
         <Switch>
-
           {/* ── Public routes ── */}
-          <Route path="/" component={(props) => <AnimatedRoute component={LandingPage} {...props} />} />
-          <Route path="/login" component={(props) => <AnimatedRoute component={Login} {...props} />} />
-          <Route path="/register" component={(props) => <AnimatedRoute component={Register} {...props} />} />
-          <Route path="/forgot-password" component={(props) => <AnimatedRoute component={ForgotPassword} {...props} />} />
-          <Route path="/pricing" component={(props) => <AnimatedRoute component={Pricing} {...props} />} />
+          <Route
+            path="/"
+            component={(props) => (
+              <AnimatedRoute component={LandingPage} {...props} />
+            )}
+          />
+          <Route
+            path="/login"
+            component={(props) => (
+              <AnimatedRoute component={Login} {...props} />
+            )}
+          />
+          <Route
+            path="/register"
+            component={(props) => (
+              <AnimatedRoute component={Register} {...props} />
+            )}
+          />
+          <Route
+            path="/forgot-password"
+            component={(props) => (
+              <AnimatedRoute component={ForgotPassword} {...props} />
+            )}
+          />
+          <Route
+            path="/pricing"
+            component={(props) => (
+              <AnimatedRoute component={Pricing} {...props} />
+            )}
+          />
+          <Route
+            path="/about"
+            component={(props) => (
+              <AnimatedRoute component={AboutUs} {...props} />
+            )}
+          />
+          <Route
+            path="/privacy"
+            component={(props) => (
+              <AnimatedRoute component={PrivacyPolicy} {...props} />
+            )}
+          />
+          <Route
+            path="/refund-policy"
+            component={(props) => (
+              <AnimatedRoute component={RefundPolicy} {...props} />
+            )}
+          />
+          <Route
+            path="/terms"
+            component={(props) => (
+              <AnimatedRoute component={TermsOfService} {...props} />
+            )}
+          />
+          <Route
+            path="/faq"
+            component={(props) => <AnimatedRoute component={FAQ} {...props} />}
+          />
+          <Route
+            path="/contact"
+            component={(props) => (
+              <AnimatedRoute component={ContactUs} {...props} />
+            )}
+          />
 
           {/* ── Protected routes (login required, user-facing app) ── */}
           {/* /wallet/verify MUST come before /wallet so Wouter doesn't match /wallet first */}
-          <Route path="/wallet/verify" component={(props) => <ProtectedRoute component={WalletVerify} {...props} />} />
-          <Route path="/wallet" component={(props) => <ProtectedRoute component={WalletPage} {...props} />} />
-          <Route path="/dashboard" component={(props) => <ProtectedRoute component={Dashboard} {...props} />} />
-          <Route path="/my-numbers" component={(props) => <ProtectedRoute component={MyNumbers} {...props} />} />
-          <Route path="/purchase-number" component={(props) => <ProtectedRoute component={PurchaseNumber} {...props} />} />
-          <Route path="/transfer" component={(props) => <ProtectedRoute component={Transfer} {...props} />} />
-          <Route path="/set-pin" component={(props) => <ProtectedRoute component={SetPin} {...props} />} />
-          <Route path="/settings" component={(props) => <ProtectedRoute component={Settings} {...props} />} />
+          <Route
+            path="/wallet/verify"
+            component={(props) => (
+              <ProtectedRoute component={WalletVerify} {...props} />
+            )}
+          />
+          <Route
+            path="/wallet"
+            component={(props) => (
+              <ProtectedRoute component={WalletPage} {...props} />
+            )}
+          />
+          <Route
+            path="/dashboard"
+            component={(props) => (
+              <ProtectedRoute component={Dashboard} {...props} />
+            )}
+          />
+          <Route
+            path="/my-numbers"
+            component={(props) => (
+              <ProtectedRoute component={MyNumbers} {...props} />
+            )}
+          />
+          <Route
+            path="/purchase-number"
+            component={(props) => (
+              <ProtectedRoute component={PurchaseNumber} {...props} />
+            )}
+          />
+          <Route
+            path="/transfer"
+            component={(props) => (
+              <ProtectedRoute component={Transfer} {...props} />
+            )}
+          />
+          <Route
+            path="/set-pin"
+            component={(props) => (
+              <ProtectedRoute component={SetPin} {...props} />
+            )}
+          />
+          <Route
+            path="/settings"
+            component={(props) => (
+              <ProtectedRoute component={Settings} {...props} />
+            )}
+          />
 
           {/* ── Admin routes ── */}
-          <Route path="/admin/login" component={(props) => <AnimatedRoute component={AdminLogin} {...props} />} />
-          <Route path="/admin" component={(props) => <ProtectedAdminRoute component={AdminDash} {...props} />} />
-          <Route path="/admin/users" component={(props) => <ProtectedAdminRoute component={Users} {...props} />} />
-          <Route path="/admin/transactions" component={(props) => <ProtectedAdminRoute component={Transactions} {...props} />} />
-          <Route path="/admin/settings" component={(props) => <ProtectedAdminRoute component={AdminSettings} {...props} />} />
-          <Route path="/admin/numbers" component={(props) => <ProtectedAdminRoute component={NumberPurchased} {...props} />} />
-          <Route path="/admin/users/:id" component={(props) => <ProtectedAdminRoute component={UserDetails} {...props} />} />
-          <Route path="/admin/providers" component={(props) => <ProtectedAdminRoute component={AdminProviders} {...props} />} />
-<Route path="/admin/pricing" component={(props) => <ProtectedAdminRoute component={AdminPricing} {...props} />} />
-
+          <Route
+            path="/admin/login"
+            component={(props) => (
+              <AnimatedRoute component={AdminLogin} {...props} />
+            )}
+          />
+          <Route
+            path="/admin"
+            component={(props) => (
+              <ProtectedAdminRoute component={AdminDash} {...props} />
+            )}
+          />
+          <Route
+            path="/admin/users"
+            component={(props) => (
+              <ProtectedAdminRoute component={Users} {...props} />
+            )}
+          />
+          <Route
+            path="/admin/transactions"
+            component={(props) => (
+              <ProtectedAdminRoute component={Transactions} {...props} />
+            )}
+          />
+          <Route
+            path="/admin/settings"
+            component={(props) => (
+              <ProtectedAdminRoute component={AdminSettings} {...props} />
+            )}
+          />
+          <Route
+            path="/admin/numbers"
+            component={(props) => (
+              <ProtectedAdminRoute component={NumberPurchased} {...props} />
+            )}
+          />
+          <Route
+            path="/admin/users/:id"
+            component={(props) => (
+              <ProtectedAdminRoute component={UserDetails} {...props} />
+            )}
+          />
+          <Route
+            path="/admin/providers"
+            component={(props) => (
+              <ProtectedAdminRoute component={AdminProviders} {...props} />
+            )}
+          />
+          <Route
+            path="/admin/pricing"
+            component={(props) => (
+              <ProtectedAdminRoute component={AdminPricing} {...props} />
+            )}
+          />
 
           {/* ── 404 catch-all (always last) ── */}
-          <Route component={(props) => <AnimatedRoute component={NotFound} {...props} />} />
+          <Route
+            component={(props) => (
+              <AnimatedRoute component={NotFound} {...props} />
+            )}
+          />
         </Switch>
       </AnimatePresence>
     </MaintenanceGate>
@@ -150,7 +312,11 @@ function Router() {
 function App() {
   return (
     <GoogleOAuthProvider clientId={import.meta.env.VITE_GOOGLE_CLIENT_ID}>
-      <NextThemesProvider attribute="class" defaultTheme="dark" enableSystem={false}>
+      <NextThemesProvider
+        attribute="class"
+        defaultTheme="dark"
+        enableSystem={false}
+      >
         <QueryClientProvider client={queryClient}>
           <AuthProvider>
             <TooltipProvider>

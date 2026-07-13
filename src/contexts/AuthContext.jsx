@@ -40,14 +40,14 @@ export function AuthProvider({ children }) {
   const googleLogin = async (credential) => {
     const { data } = await api.post("/api/users/google", { credential });
     saveSession(data, data.token);
-    // Fetch full profile so hasPin / isEmailVerified are available immediately
     try {
-      const { data: profile } = await api.get("/api/users/me");
-      const fullUser = { ...data, ...profile };
-      setUser(fullUser);
-      localStorage.setItem("vn_user", JSON.stringify(fullUser));
+        const { data: profile } = await api.get("/api/users/me");
+        const fullUser = { ...data, ...profile };
+        setUser(fullUser);
+        localStorage.setItem("vn_user", JSON.stringify(fullUser));
     } catch (_) {}
-  };
+    return data; 
+};
 
   const logout = () => {
     setUser(null);

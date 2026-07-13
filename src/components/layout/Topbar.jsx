@@ -1,24 +1,118 @@
-import React, { useEffect, useState } from "react";
-import { Moon, Sun, Bell, Menu } from "lucide-react";
+import React, { useEffect, useRef, useState } from "react";
+import { Moon, Sun, Menu, LayoutDashboard, Phone, Wallet, Settings, LogOut } from "lucide-react";
 import { useTheme } from "next-themes";
+import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 
+// ── Avatar dropdown ───────────────────────────────────────────────────
+function AvatarDropdown({ initials, name, email, onLogout }) {
+  const [open, setOpen] = useState(false);
+  const [, navigate] = useLocation();
+  const ref = useRef(null);
+
+  useEffect(() => {
+    function handler(e) {
+      if (ref.current && !ref.current.contains(e.target)) setOpen(false);
+    }
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
+
+  const items = [
+    {
+      label: "Dashboard",
+      icon: LayoutDashboard,
+      action: () => { navigate("/dashboard"); setOpen(false); },
+    },
+    {
+      label: "My Numbers",
+      icon: Phone,
+      action: () => { navigate("/my-numbers"); setOpen(false); },
+    },
+    {
+      label: "Wallet & Billing",
+      icon: Wallet,
+      action: () => { navigate("/wallet"); setOpen(false); },
+    },
+    {
+      label: "Settings",
+      icon: Settings,
+      action: () => { navigate("/settings"); setOpen(false); },
+    },
+    {
+      label: "Sign Out",
+      icon: LogOut,
+      danger: true,
+      action: () => { onLogout(); setOpen(false); },
+    },
+  ];
+
+  return (
+    <div ref={ref} className="relative">
+      <button
+        onClick={() => setOpen((v) => !v)}
+        className="h-9 w-9 rounded-full bg-gradient-to-tr from-violet-600 to-fuchsia-500 flex items-center justify-center shadow-md shadow-violet-500/20 border-2 border-background hover:opacity-90 transition-opacity focus:outline-none focus:ring-2 focus:ring-violet-500/40"
+      >
+        <span className="font-semibold text-white text-sm">{initials}</span>
+      </button>
+
+      {open && (
+        <div className="absolute right-0 top-11 w-52 rounded-2xl bg-card border border-border shadow-xl shadow-black/30 overflow-hidden z-50 animate-in fade-in-0 zoom-in-95 duration-150">
+          <div className="px-4 py-3 border-b border-border flex items-center gap-3">
+            <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-violet-600 to-fuchsia-500 flex items-center justify-center flex-shrink-0">
+              <span className="text-white text-xs font-bold">{initials}</span>
+            </div>
+            <div className="min-w-0">
+              <p className="text-sm font-semibold text-foreground truncate">{name || "User"}</p>
+              <p className="text-[11px] text-muted-foreground truncate">{email || ""}</p>
+            </div>
+          </div>
+
+          <div className="py-1.5">
+            {items.map(({ label, icon: Icon, danger, action }) => (
+              <button
+                key={label}
+                onClick={action}
+                className={`w-full flex items-center gap-3 px-4 py-2.5 text-sm transition-colors ${
+                  danger
+                    ? "text-red-400 hover:bg-red-500/10"
+                    : "text-foreground hover:bg-white/5"
+                }`}
+              >
+                <Icon className="w-4 h-4 flex-shrink-0" />
+                {label}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── Topbar ────────────────────────────────────────────────────────────
 export function Topbar({ onMenuClick }) {
   const { theme, setTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
-  // Real user data from AuthContext instead of hardcoded values
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
 
   useEffect(() => { setMounted(true); }, []);
 
-  // Real initials from user name, fallback to "??"
   const initials = user?.name
     ? user.name.split(" ").map((w) => w[0]).join("").toUpperCase().slice(0, 2)
     : "??";
 
-  // Real balance from user object
   const balance = user?.balance ?? 0;
+
+  const handleLogout = () => {
+    if (typeof logout === "function") {
+      logout();
+    } else {
+      localStorage.clear();
+      window.location.href = "/login";
+    }
+  };
 
   return (
     <header className="h-16 w-full sticky top-0 z-30 flex items-center justify-between px-6 bg-background/90 backdrop-blur-md border-b border-border">
@@ -43,11 +137,6 @@ export function Topbar({ onMenuClick }) {
           </span>
         </div>
 
-        <Button variant="ghost" size="icon" className="relative">
-          <Bell className="h-5 w-5" />
-          <span className="absolute top-2 right-2 w-2 h-2 rounded-full bg-primary animate-pulse" />
-        </Button>
-
         {mounted && (
           <Button
             variant="ghost"
@@ -58,9 +147,12 @@ export function Topbar({ onMenuClick }) {
           </Button>
         )}
 
-        <div className="h-9 w-9 rounded-full bg-gradient-to-tr from-violet-600 to-fuchsia-500 flex items-center justify-center shadow-md shadow-violet-500/20 border-2 border-background">
-          <span className="font-semibold text-white text-sm">{initials}</span>
-        </div>
+        <AvatarDropdown
+          initials={initials}
+          name={user?.name}
+          email={user?.email}
+          onLogout={handleLogout}
+        />
       </div>
     </header>
   );
