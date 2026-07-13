@@ -154,7 +154,7 @@ export default function AdminDashboard() {
       <div className="flex-1 flex flex-col min-w-0 md:ml-64">
         <AdminTopbar onMenuClick={() => setSidebarOpen(true)} />
 
-        <main className="flex-1 p-6 space-y-6 overflow-auto">
+        <main className="flex-1 p-6 space-y-6 overflow-auto pb-20">
           {/* Page title */}
           <div>
             <h1 className="text-2xl font-bold text-foreground">Overview</h1>
