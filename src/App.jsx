@@ -49,6 +49,7 @@ import AdminBoostOrders from "@/pages/adminBoostOrders";
 import AdminBoostPricing from "@/pages/adminBoostPricing";
 
 
+
 import AboutUs from "@/pages/about";
 import PrivacyPolicy from "@/pages/privacy";
 import RefundPolicy from "@/pages/refund-policy";
