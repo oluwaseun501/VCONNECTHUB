@@ -238,6 +238,7 @@ function Router() {
               <ProtectedRoute component={SetPin} {...props} />
             )}
           />
+          
           <Route
             path="/settings"
             component={(props) => (
