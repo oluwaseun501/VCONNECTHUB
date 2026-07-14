@@ -45,8 +45,9 @@ import UserDetails from "@/pages/userDetails";
 import AdminProviders from "@/pages/adminProviders";
 import AdminPricing from "@/pages/adminPricing";
 import AdminSMMProviders from "@/pages/AdminSMMProviders";
-import AdminBoostOrders from "@/pages/adminBoostOrders";
-import AdminBoostPricing from "@/pages/adminBoostPricing";
+import AdminBoostOrders from "@/pages/AdminBoostOrders";
+import AdminBoostPricing from "@/pages/AdminBoostPricing";
+
 
 import AboutUs from "@/pages/about";
 import PrivacyPolicy from "@/pages/privacy";
