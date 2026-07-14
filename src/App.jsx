@@ -44,11 +44,9 @@ import NumberPurchased from "@/pages/numbersPurchased";
 import UserDetails from "@/pages/userDetails";
 import AdminProviders from "@/pages/adminProviders";
 import AdminPricing from "@/pages/adminPricing";
-import AdminSMMProviders from "@/pages/adminSMMProviders";
+import AdminSMMProviders from "@/pages/AdminSMMProviders";
 import AdminBoostOrders from "@/pages/adminBoostOrders";
 import AdminBoostPricing from "@/pages/adminBoostPricing";
-
-
 
 import AboutUs from "@/pages/about";
 import PrivacyPolicy from "@/pages/privacy";
