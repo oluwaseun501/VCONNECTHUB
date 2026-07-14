@@ -48,6 +48,7 @@ import AdminSMMProviders from "@/pages/adminSMMProviders";
 import AdminBoostOrders from "@/pages/adminBoostOrders";
 import AdminBoostPricing from "@/pages/adminBoostPricing";
 
+
 import AboutUs from "@/pages/about";
 import PrivacyPolicy from "@/pages/privacy";
 import RefundPolicy from "@/pages/refund-policy";
@@ -238,7 +239,7 @@ function Router() {
               <ProtectedRoute component={SetPin} {...props} />
             )}
           />
-          
+
           <Route
             path="/settings"
             component={(props) => (
