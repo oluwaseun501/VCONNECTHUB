@@ -5,7 +5,7 @@ import FundWalletModal from "@/components/FundWalletModal";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Check, ChevronRight, Search, ShieldCheck, Loader2, AlertCircle } from "lucide-react";
+import { Check, ChevronRight, Search, ShieldCheck, Loader2, AlertCircle, Zap } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import api from "@/lib/axios";
 import {
@@ -294,6 +294,37 @@ export default function Dashboard() {
             </div>
           </CardContent>
         </Card>
+      </div>
+
+            {/* ── Boosting Promo Banner ── */}
+      <div className="mb-8 relative overflow-hidden rounded-2xl border border-fuchsia-500/20 bg-gradient-to-r from-fuchsia-500/5 via-violet-500/5 to-transparent p-5">
+        {/* decorative glow */}
+        <div className="absolute -right-10 -top-10 w-48 h-48 rounded-full bg-fuchsia-500/10 blur-3xl pointer-events-none" />
+        <div className="absolute -right-4 top-4 w-24 h-24 rounded-full bg-violet-500/10 blur-2xl pointer-events-none" />
+
+        <div className="relative flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-fuchsia-500 to-violet-600 flex items-center justify-center flex-shrink-0 shadow-lg shadow-fuchsia-500/25">
+              <Zap className="w-6 h-6 text-white" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2 mb-0.5">
+                <h3 className="font-bold text-foreground text-base">Social Media Boosting</h3>
+                <span className="text-[10px] font-bold uppercase tracking-wide px-2 py-0.5 rounded-full bg-fuchsia-500/15 text-fuchsia-400 border border-fuchsia-500/20">
+                  New
+                </span>
+              </div>
+              <p className="text-sm text-muted-foreground">
+                Grow your followers, likes &amp; views on Instagram, TikTok, YouTube and more.
+              </p>
+            </div>
+          </div>
+          <Link href="/boosting">
+            <button className="flex-shrink-0 inline-flex items-center gap-2 h-10 px-5 rounded-xl text-sm font-semibold bg-gradient-to-r from-fuchsia-600 to-violet-600 text-white hover:from-fuchsia-500 hover:to-violet-500 transition-all shadow-lg shadow-fuchsia-500/20 whitespace-nowrap">
+              <Zap className="w-4 h-4" /> Boost Now
+            </button>
+          </Link>
+        </div>
       </div>
 
       {/* Main grid */}

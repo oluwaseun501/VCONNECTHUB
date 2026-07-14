@@ -1,6 +1,6 @@
 import React from "react";
 import { Link, useLocation } from "wouter";
-import { LayoutDashboard, Phone, Wallet, Settings, LogOut, KeyRound, ArrowLeftRight, ShoppingCart, List, X } from "lucide-react";
+import { LayoutDashboard, Phone, Wallet, Settings, LogOut, KeyRound, ArrowLeftRight, ShoppingCart, List, X, Zap } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
 
@@ -8,6 +8,7 @@ const links = [
   { name: "Dashboard",        href: "/dashboard",       icon: LayoutDashboard },
   { name: "Virtual Numbers",  href: "/purchase-number", icon: ShoppingCart },
   { name: "My Numbers",       href: "/my-numbers",      icon: List },
+  { name: "Social Boost",     href: "/boosting",        icon: Zap },        // ← add this
   { name: "Wallet & Billing", href: "/wallet",          icon: Wallet },
   { name: "Transfer Funds",   href: "/transfer",        icon: ArrowLeftRight },
   { name: "Set PIN",          href: "/set-pin",         icon: KeyRound },

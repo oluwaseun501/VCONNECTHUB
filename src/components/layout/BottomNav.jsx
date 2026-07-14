@@ -1,16 +1,15 @@
 import React from "react";
 import { Link, useLocation } from "wouter";
-import { LayoutDashboard, ShoppingCart, Wallet, ArrowLeftRight, KeyRound } from "lucide-react";
+import { LayoutDashboard, ShoppingCart, Wallet, ArrowLeftRight, Zap } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const tabs = [
   { name: "Home",     href: "/dashboard",       icon: LayoutDashboard },
-  { name: "Buy",      href: "/purchase-number", icon: ShoppingCart },
+  { name: "Number",      href: "/purchase-number", icon: ShoppingCart },
+  { name: "Boost",    href: "/boosting",        icon: Zap },           
   { name: "Wallet",   href: "/wallet",          icon: Wallet },
   { name: "Transfer", href: "/transfer",        icon: ArrowLeftRight },
-  { name: "PIN",      href: "/set-pin",         icon: KeyRound },
 ];
-
 export function BottomNav() {
   const [location] = useLocation();
 

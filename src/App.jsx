@@ -33,6 +33,7 @@ import SetPin from "@/pages/set-pin";
 import SupportChat from "@/components/ui/support-chat";
 import Transfer from "@/pages/transfer";
 import PurchaseNumber from "@/pages/purchase-number";
+import BoostingPage from "@/pages/boosting";
 
 import AdminLogin from "@/pages/adminLogin";
 import AdminDash from "@/pages/adminDashboard";
@@ -43,6 +44,9 @@ import NumberPurchased from "@/pages/numbersPurchased";
 import UserDetails from "@/pages/userDetails";
 import AdminProviders from "@/pages/adminProviders";
 import AdminPricing from "@/pages/adminPricing";
+import AdminSMMProviders from "@/pages/adminSMMProviders";
+import AdminBoostOrders from "@/pages/adminBoostOrders";
+import AdminBoostPricing from "@/pages/adminBoostPricing";
 
 import AboutUs from "@/pages/about";
 import PrivacyPolicy from "@/pages/privacy";
@@ -240,6 +244,12 @@ function Router() {
               <ProtectedRoute component={Settings} {...props} />
             )}
           />
+          <Route
+            path="/boosting"
+            component={(props) => (
+              <ProtectedRoute component={BoostingPage} {...props} />
+            )}
+          />
 
           {/* ── Admin routes ── */}
           <Route
@@ -294,6 +304,24 @@ function Router() {
             path="/admin/pricing"
             component={(props) => (
               <ProtectedAdminRoute component={AdminPricing} {...props} />
+            )}
+          />
+          <Route
+            path="/admin/smm-providers"
+            component={(props) => (
+              <ProtectedAdminRoute component={AdminSMMProviders} {...props} />
+            )}
+          />
+          <Route
+            path="/admin/boost-orders"
+            component={(props) => (
+              <ProtectedAdminRoute component={AdminBoostOrders} {...props} />
+            )}
+          />
+          <Route
+            path="/admin/boost-pricing"
+            component={(props) => (
+              <ProtectedAdminRoute component={AdminBoostPricing} {...props} />
             )}
           />
 

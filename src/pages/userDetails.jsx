@@ -16,6 +16,7 @@ import {
   debitUserWallet,
   getAdminTransactions,
   getAdminOrders,
+  getAllBoostOrders,   
   sendPasswordReset,
 } from "./adminApi";
 
@@ -52,7 +53,7 @@ function timeAgo(dateStr) {
   return `${Math.floor(diff / 86400)} days ago`;
 }
 
-const TABS = ["Overview", "Transactions", "Numbers Purchased", "Danger Zone"];
+const TABS = ["Overview", "Transactions", "Numbers Purchased", "Boost Orders", "Danger Zone"];
 
 // ── Confirm modal ──────────────────────────────────────────────────────
 function ConfirmModal({ title, description, confirmLabel, confirmClass, onConfirm, onCancel, loading }) {
@@ -196,6 +197,9 @@ export default function UserDetails() {
   const [orders, setOrders] = useState([]);
   const [ordersLoading, setOrdersLoading] = useState(false);
 
+  const [boostOrders, setBoostOrders] = useState([]);
+const [boostLoading, setBoostLoading] = useState(false);
+
   // Modal state
   const [modal, setModal] = useState(null);
   const [actionLoading, setActionLoading] = useState(false);
@@ -270,6 +274,23 @@ export default function UserDetails() {
         }));
       } catch {}
       setOrdersLoading(false);
+    }
+    load();
+  }, [activeTab, id]);
+
+    useEffect(() => {
+    if (activeTab !== "Boost Orders" || boostOrders.length > 0) return;
+    async function load() {
+      setBoostLoading(true);
+      try {
+        const { data } = await getAllBoostOrders({ limit: 100 });
+        const list = Array.isArray(data) ? data : (data.orders ?? []);
+        setBoostOrders(list.filter((o) => {
+          const uid = typeof o.user === "object" ? o.user?._id : o.user;
+          return uid === id;
+        }));
+      } catch {}
+      setBoostLoading(false);
     }
     load();
   }, [activeTab, id]);
@@ -397,6 +418,7 @@ export default function UserDetails() {
   const avatarColor = colorFor(user._id);
   const isAdmin = user.isAdmin ?? false;
   const isBanned = user.isBanned ?? false;
+  
 
   return (
     <div className="min-h-screen bg-background flex">
@@ -656,6 +678,70 @@ export default function UserDetails() {
               )}
             </div>
           )}
+
+          
+
+          {/* ── Tab: Boost Orders ── */}
+{activeTab === "Boost Orders" && (
+  <div className="glass-card rounded-2xl overflow-hidden">
+    <div className="px-6 py-4 border-b border-border flex items-center justify-between">
+      <h2 className="font-semibold text-foreground">Boost Orders</h2>
+      <span className="text-xs text-muted-foreground">{boostOrders.length} orders</span>
+    </div>
+    {boostLoading ? (
+      <div className="flex items-center justify-center py-16">
+        <Loader2 className="w-5 h-5 animate-spin text-violet-400" />
+      </div>
+    ) : (
+      <div className="overflow-x-auto">
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="border-b border-border text-xs text-muted-foreground uppercase tracking-wider">
+              <th className="text-left px-6 py-3.5 font-medium">Order ID</th>
+              <th className="text-left px-4 py-3.5 font-medium">Service</th>
+              <th className="text-left px-4 py-3.5 font-medium hidden md:table-cell">Link</th>
+              <th className="text-left px-4 py-3.5 font-medium">Qty</th>
+              <th className="text-left px-4 py-3.5 font-medium">Status</th>
+              <th className="text-right px-6 py-3.5 font-medium">Charge</th>
+            </tr>
+          </thead>
+          <tbody>
+            {boostOrders.length === 0 ? (
+              <tr>
+                <td colSpan={6} className="px-6 py-16 text-center text-muted-foreground text-sm">
+                  No boost orders found.
+                </td>
+              </tr>
+            ) : (
+              boostOrders.map((o, i) => (
+                <tr key={o._id} className={`border-b border-border/50 hover:bg-white/5 transition-colors ${i === boostOrders.length - 1 ? "border-b-0" : ""}`}>
+                  <td className="px-6 py-3.5 font-mono text-xs text-muted-foreground">#{o._id?.slice(-8)}</td>
+                  <td className="px-4 py-3.5 text-foreground text-xs max-w-[160px] truncate">
+                    {typeof o.service === "object" ? o.service?.name : o.serviceName ?? "—"}
+                  </td>
+                  <td className="px-4 py-3.5 text-muted-foreground text-xs hidden md:table-cell max-w-[160px] truncate">
+                    <a href={o.link} target="_blank" rel="noreferrer" className="text-violet-400 hover:underline">
+                      {o.link}
+                    </a>
+                  </td>
+                  <td className="px-4 py-3.5 text-foreground">{o.quantity?.toLocaleString()}</td>
+                  <td className="px-4 py-3.5">
+                    <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold uppercase border ${ORDER_STATUS_STYLES[o.status] ?? "bg-white/5 text-muted-foreground border-border"}`}>
+                      {o.status}
+                    </span>
+                  </td>
+                  <td className="px-6 py-3.5 text-right font-bold text-red-400">
+                    -{fmt(o.charge ?? o.totalPrice ?? 0)}
+                  </td>
+                </tr>
+              ))
+            )}
+          </tbody>
+        </table>
+      </div>
+    )}
+  </div>
+)}
 
           {/* ── Tab: Danger Zone ── */}
           {activeTab === "Danger Zone" && (

@@ -2,18 +2,20 @@ import React from "react";
 import { Link, useLocation } from "wouter";
 
 import { cn } from "@/lib/utils";
-import { LayoutDashboard, Users, Phone, ArrowLeftRight, Settings, LogOut, ShieldCheck, X, Plug2, DollarSign } from "lucide-react";
+import { LayoutDashboard, Users, Phone, ArrowLeftRight, Settings, LogOut, ShieldCheck, X, Plug2, DollarSign, Zap, ShoppingCart, TrendingUp } from "lucide-react";
 
 
 const links = [
-  { name: "Overview",           href: "/admin",               icon: LayoutDashboard },
-  { name: "Users",              href: "/admin/users",          icon: Users },
-  { name: "Numbers Purchased",  href: "/admin/numbers",        icon: Phone },
-  { name: "All Transactions",   href: "/admin/transactions",   icon: ArrowLeftRight },
-  { name: "API Providers",    href: "/admin/providers",      icon: Plug2 },
-
-{ name: "Pricing", href: "/admin/pricing", icon: DollarSign },
-  { name: "Settings",           href: "/admin/settings",       icon: Settings },
+  { name: "Overview",           href: "/admin",                  icon: LayoutDashboard },
+  { name: "Users",              href: "/admin/users",             icon: Users },
+  { name: "Numbers Purchased",  href: "/admin/numbers",           icon: Phone },
+  { name: "Boost Orders",       href: "/admin/boost-orders",      icon: ShoppingCart },
+  { name: "All Transactions",   href: "/admin/transactions",      icon: ArrowLeftRight },
+  { name: "API Providers",      href: "/admin/providers",         icon: Plug2 },
+  { name: "SMM Providers",      href: "/admin/smm-providers",     icon: Zap },
+  { name: "Pricing",            href: "/admin/pricing",           icon: DollarSign },
+  { name: "Boost Pricing",      href: "/admin/boost-pricing",     icon: TrendingUp },
+  { name: "Settings",           href: "/admin/settings",          icon: Settings },
 ];
 
 function handleLogout(onClose) {

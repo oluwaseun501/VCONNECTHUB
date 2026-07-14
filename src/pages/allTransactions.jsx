@@ -8,7 +8,7 @@ import {
 } from "lucide-react";
 import { getAdminTransactions } from "./adminApi";
 
-const TYPE_FILTERS   = ["all", "credit", "debit", "transfer", "admin"];
+const TYPE_FILTERS = ["all", "credit", "debit", "transfer", "admin", "boost"];
 const STATUS_FILTERS = ["all", "successful", "pending", "failed"];
 
 const DATE_PRESETS = [
@@ -25,6 +25,7 @@ const TYPE_STYLES = {
   purchase: "bg-violet-500/10 text-violet-400 border-violet-500/20",
   transfer: "bg-amber-500/10 text-amber-400 border-amber-500/20",
   admin:    "bg-blue-500/10 text-blue-400 border-blue-500/20",
+  boost:    "bg-fuchsia-500/10 text-fuchsia-400 border-fuchsia-500/20", 
 };
 
 const STATUS_STYLES = {
