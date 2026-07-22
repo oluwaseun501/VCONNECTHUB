@@ -9,6 +9,7 @@ import AnimatedOrbs from "@/components/ui/animated-orbs";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { GoogleLogin } from "@react-oauth/google";
+import SEOHead from "@/components/SEOHead";
 
 
 const schema = z.object({
@@ -17,6 +18,7 @@ const schema = z.object({
 });
 
 export default function Login() {
+  <SEOHead noIndex={true} />
   const [showPassword, setShowPassword] = useState(false);
   const [remember, setRemember] = useState(false);
   const [serverError, setServerError] = useState("");
@@ -86,6 +88,7 @@ export default function Login() {
   };
 
   return (
+    
     <div className="min-h-screen flex flex-col relative overflow-hidden bg-violet-50 dark:bg-[#080b14] transition-colors duration-300">
       <AnimatedOrbs />
 

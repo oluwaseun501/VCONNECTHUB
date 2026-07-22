@@ -13,6 +13,8 @@ import {
 import { services, countries } from "@/lib/mock-data";
 import AnimatedOrbs from "@/components/ui/animated-orbs";
 
+import SEOHead from "@/components/SEOHead";
+
 
 
 const GLIDE      = { duration: 1.1, ease: [0.22, 1, 0.36, 1] };
@@ -290,6 +292,7 @@ function LiveOrderDemo() {
 
 function FeatureCard({ icon: Icon, title, description }) {
   return (
+    
     <motion.div
       variants={itemVariants}
       className="group bg-card border border-card-border rounded-2xl p-6 hover:border-primary/40 hover:shadow-lg hover:shadow-primary/5 hover:-translate-y-1 transition-all duration-300"
@@ -337,6 +340,12 @@ function SectionHeading({ badge, title, subtitle }) {
 }
 
 export default function LandingPage() {
+
+   <SEOHead
+      title="VConnectHub | Virtual Numbers & SMM Panel Nigeria"
+      description="Get real TikTok followers, Instagram likes and YouTube views instantly. Nigeria's #1 SMM panel."
+      url="https://www.vconnecthub.com/landing"
+    />
   const heroRef = useRef(null);
 
   useEffect(() => {
@@ -380,7 +389,7 @@ export default function LandingPage() {
                   <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75" />
                   <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-primary" />
                 </span>
-                Trusted by 20,000+ customers
+                FAST & RELIABLE
               </motion.div>
 
               {/* Heading */}

@@ -92,11 +92,15 @@ export const deleteSMMProvider = (id) => adminApi.delete(`/api/admin/smm-provide
 
 // SMM Services
 export const syncSMMServices = () => adminApi.post("/api/admin/smm-providers/services/sync");
-export const getSMMServices = () => adminApi.get("/api/admin/smm-providers/services");
+export const getSMMServices = (params) => adminApi.get("/api/admin/smm-providers/services", { params });
+export const getSMMCategories = () => adminApi.get("/api/admin/smm-providers/services/categories");
 export const updateSMMService = (id, data) => adminApi.patch(`/api/admin/smm-providers/services/${id}`, data);
 
 // Boost Orders
 export const getAdminBoostOrders = () => adminApi.get("/api/admin/boost-orders");
 export const getAllBoostOrders = (params) => adminApi.get("/api/admin/boost-orders", { params });
+
+export const getBoostingServices   = (params) => adminApi.get("/api/boosting/services", { params });
+export const getBoostingCategories = ()        => adminApi.get("/api/boosting/categories");
 
 export default adminApi;

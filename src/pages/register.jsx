@@ -9,6 +9,7 @@ import AnimatedOrbs from "@/components/ui/animated-orbs";
 import { useAuth } from "@/contexts/AuthContext";
 import { GoogleLogin } from "@react-oauth/google";
 import { useToast } from "@/hooks/use-toast";
+import SEOHead from "@/components/SEOHead";
 
 const schema = z
   .object({
@@ -24,6 +25,7 @@ const schema = z
   });
 
 export default function Register() {
+  <SEOHead noIndex={true} />
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
   const [serverError, setServerError] = useState("");

@@ -13,6 +13,8 @@ import {
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import api from "@/lib/axios";
 import FundWalletModal from "@/components/FundWalletModal";
+import SEOHead from "@/components/SEOHead";
+
 
 const GLIDE = { duration: 0.7, ease: [0.22, 1, 0.36, 1] };
 
@@ -320,6 +322,11 @@ export default function PurchaseNumber() {
   ══════════════════════════════════════════════ */
   return (
     <DashboardLayout>
+       <SEOHead
+            title="Buy Virtual Numbers for WhatsApp & OTP | VConnectHub"
+            description="Get real TikTok followers, Instagram likes and YouTube views instantly. Nigeria's #1 SMM panel."
+            url="https://www.vconnecthub.com/pricing"
+          />
       <div className="max-w-4xl mx-auto px-4 py-8">
 
         {/* Header */}
