@@ -84,21 +84,19 @@ export const upsertPriceOverride = (data)   => adminApi.post('/api/admin/price-o
 export const deletePriceOverride = (id)     => adminApi.delete(`/api/admin/price-overrides/${id}`);
 
 // SMM Providers
-export const getSMMProviders = () => axios.get("/api/admin/smm-providers");
-export const addSMMProvider = (data) => axios.post("/api/admin/smm-providers", data);
-export const updateSMMProvider = (id, data) => axios.put(`/api/admin/smm-providers/${id}`, data);
-export const activateSMMProvider = (id) => axios.patch(`/api/admin/smm-providers/${id}/activate`);
-export const deleteSMMProvider = (id) => axios.delete(`/api/admin/smm-providers/${id}`);
+export const getSMMProviders = () => adminApi.get("/api/admin/smm-providers");
+export const addSMMProvider = (data) => adminApi.post("/api/admin/smm-providers", data);
+export const updateSMMProvider = (id, data) => adminApi.put(`/api/admin/smm-providers/${id}`, data);
+export const activateSMMProvider = (id) => adminApi.patch(`/api/admin/smm-providers/${id}/activate`);
+export const deleteSMMProvider = (id) => adminApi.delete(`/api/admin/smm-providers/${id}`);
 
 // SMM Services
-export const syncSMMServices = () => axios.post("/api/admin/smm-providers/services/sync");
-export const getSMMServices = () => axios.get("/api/admin/smm-providers/services");
-export const updateSMMService = (id, data) => axios.patch(`/api/admin/smm-providers/services/${id}`, data);
+export const syncSMMServices = () => adminApi.post("/api/admin/smm-providers/services/sync");
+export const getSMMServices = () => adminApi.get("/api/admin/smm-providers/services");
+export const updateSMMService = (id, data) => adminApi.patch(`/api/admin/smm-providers/services/${id}`, data);
 
 // Boost Orders
-export const getAdminBoostOrders = () => axios.get("/api/admin/boost-orders");
-export const getAllBoostOrders = (params) =>
-  api.get("/admin/boost-orders", { params });
-
+export const getAdminBoostOrders = () => adminApi.get("/api/admin/boost-orders");
+export const getAllBoostOrders = (params) => adminApi.get("/api/admin/boost-orders", { params });
 
 export default adminApi;
