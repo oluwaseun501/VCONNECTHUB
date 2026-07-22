@@ -1,0 +1,23 @@
+User-agent: *
+Allow: /
+
+# Block private dashboard pages from being indexed
+Disallow: /dashboard
+Disallow: /dashboard/
+Disallow: /settings
+Disallow: /profile
+Disallow: /transactions
+Disallow: /wallet
+Disallow: /admin
+
+# Allow public pages
+Allow: /login
+Allow: /register
+Allow: /boosting
+Allow: /virtual-numbers
+Allow: /pricing
+Allow: /about
+Allow: /blog
+Allow: /contact
+
+Sitemap: https://vconnecthub.com/sitemap.xml

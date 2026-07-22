@@ -127,6 +127,7 @@ export function AppShell({ children }) {
           );
         })}
       </nav>
+      
 
       {/* Main Content */}
       <main className="flex-1 overflow-x-hidden relative">
