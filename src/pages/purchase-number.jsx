@@ -3,7 +3,7 @@ import { useLocation } from "wouter";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Search, ChevronDown, ShoppingCart, CheckCircle2,
-  AlertCircle, Globe, Zap, Shield, Loader2, XCircle, Copy, Check
+  AlertCircle, Globe, Zap, Shield, Loader2, XCircle, Copy, Check, ChevronRight
 } from "lucide-react";
 import {
   SiWhatsapp, SiTelegram, SiTiktok, SiFacebook,
@@ -66,6 +66,36 @@ function titleCase(str) {
   const lower = str?.toLowerCase() || "";
   if (COUNTRY_LABELS[lower]) return COUNTRY_LABELS[lower];
   return str.replace(/[_-]/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+}
+
+/* ── Service Card (shared between grid and selected view) ── */
+function ServiceCard({ service, selected, onClick, showCheck = true }) {
+  const Icon = service.icon;
+  return (
+    <button
+      onClick={onClick}
+      className={`flex items-center gap-3 p-3.5 rounded-xl border-2 text-left transition-all w-full ${
+        selected
+          ? "border-violet-500 bg-violet-500/10 shadow-[0_0_0_3px_rgba(139,92,246,0.12)]"
+          : "border-border hover:border-violet-500/40 hover:bg-muted/50 cursor-pointer"
+      }`}
+    >
+      <div
+        className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
+        style={{ backgroundColor: service.color + "22" }}
+      >
+        {Icon
+          ? <Icon className="w-5 h-5" style={{ color: service.color }} />
+          : <span className="text-sm font-bold" style={{ color: service.color }}>{service.name[0]}</span>
+        }
+      </div>
+      <div className="flex-1 min-w-0">
+        <p className="text-sm font-semibold text-foreground truncate">{service.name}</p>
+        <p className="text-xs font-bold text-violet-600 dark:text-violet-400">₦{Number(service.price).toLocaleString()}</p>
+      </div>
+      {selected && showCheck && <div className="w-2.5 h-2.5 rounded-full bg-violet-500 flex-shrink-0" />}
+    </button>
+  );
 }
 
 /* ── PIN Modal ── */
@@ -143,6 +173,8 @@ export default function PurchaseNumber() {
   const [servicesError, setServicesError]     = useState("");
   const [serviceSearch, setServiceSearch]     = useState("");
   const [selectedService, setSelectedService] = useState(null);
+  // Controls whether the full service list is shown or collapsed to just the selection
+  const [serviceListOpen, setServiceListOpen] = useState(true);
 
   /* ── Steps ── */
   const [step, setStep]               = useState(STEP_SELECT);
@@ -210,6 +242,7 @@ export default function PurchaseNumber() {
     setServicesLoading(true);
     setServicesError("");
     setSelectedService(null);
+    setServiceListOpen(true); // reset: show full list when country changes
     setServices([]);
     (async () => {
       try {
@@ -247,6 +280,13 @@ export default function PurchaseNumber() {
 
   /* ── Handlers ── */
   const handleBuyClick = () => { if (!selectedService || !selectedCountry) return; setPinError(""); setShowPinModal(true); };
+
+  // When user picks a service, select it and collapse the list
+  const handleSelectService = (service) => {
+    setSelectedService(service);
+    setServiceListOpen(false); // collapse list — user can scroll straight to Purchase
+    setServiceSearch("");
+  };
 
   const handlePinConfirm = async (pin) => {
     setBuying(true); setPinError("");
@@ -302,15 +342,15 @@ export default function PurchaseNumber() {
 
   const handleBuyAnother = () => {
     stopPolling(); setOrder(null); setSmsStatus("PENDING"); setSmsMessages([]);
-    setSelectedService(null); setStep(STEP_SELECT);
+    setSelectedService(null); setServiceListOpen(true); setStep(STEP_SELECT);
   };
 
   /* ── Derived ── */
   const filteredCountries = countries.filter((c) => {
-  const query = countrySearch.toLowerCase();
-  const aliases = COUNTRY_SEARCH_ALIASES[c.id.toLowerCase()] || [];
-  return c.name.toLowerCase().includes(query) || c.id.toLowerCase().includes(query) || aliases.some((a) => a.includes(query));
-});
+    const query = countrySearch.toLowerCase();
+    const aliases = COUNTRY_SEARCH_ALIASES[c.id.toLowerCase()] || [];
+    return c.name.toLowerCase().includes(query) || c.id.toLowerCase().includes(query) || aliases.some((a) => a.includes(query));
+  });
   const popularCountries  = countries.filter((c) => POPULAR_COUNTRY_IDS.includes(c.id));
 
   const filteredServices  = services.filter((s) => s.name.toLowerCase().includes(serviceSearch.toLowerCase()));
@@ -330,11 +370,11 @@ export default function PurchaseNumber() {
   ══════════════════════════════════════════════ */
   return (
     <DashboardLayout>
-       <SEOHead
-            title="Buy Virtual Numbers for WhatsApp & OTP | VConnectHub"
-            description="Get real TikTok followers, Instagram likes and YouTube views instantly. Nigeria's #1 SMM panel."
-            url="https://www.vconnecthub.com/pricing"
-          />
+      <SEOHead
+        title="Buy Virtual Numbers for WhatsApp & OTP | VConnectHub"
+        description="Get real TikTok followers, Instagram likes and YouTube views instantly. Nigeria's #1 SMM panel."
+        url="https://www.vconnecthub.com/pricing"
+      />
       <div className="max-w-4xl mx-auto px-4 py-8">
 
         {/* Header */}
@@ -467,91 +507,113 @@ export default function PurchaseNumber() {
 
                 {/* Step 2: Service */}
                 <div className="bg-card border border-border rounded-2xl p-5 shadow-sm">
-                  <div className="flex items-center gap-2 mb-4">
-                    <span className="w-6 h-6 rounded-full bg-violet-500 text-white text-xs font-bold flex items-center justify-center">2</span>
-                    <h2 className="font-semibold text-foreground">Select Service</h2>
-                  </div>
-
-                  <div className="relative mb-4">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                    <input type="text" placeholder="Search services by name…" value={serviceSearch} onChange={(e) => setServiceSearch(e.target.value)}
-                      className="w-full h-10 pl-9 pr-4 rounded-xl bg-muted/50 border border-border text-foreground text-sm outline-none focus:border-violet-500 transition-all"
-                    />
-                  </div>
-
-                  {servicesError ? (
-                    <p className="text-sm text-red-500 flex items-center gap-1.5"><AlertCircle className="w-4 h-4" /> {servicesError}</p>
-                  ) : servicesLoading ? (
-                    <div className="flex items-center gap-2 text-sm text-muted-foreground py-3"><Loader2 className="w-4 h-4 animate-spin" /> Loading services…</div>
-                  ) : filteredServices.length === 0 ? (
-                    <p className="text-sm text-muted-foreground py-3">{serviceSearch ? "No matching services." : "No services available for this country."}</p>
-                  ) : (
-                    <div className="space-y-4">
-
-                      {/* Popular services */}
-                      {popularServices.length > 0 && (
-                        <div>
-                          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Popular</p>
-                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                            {popularServices.map((service) => {
-                              const Icon     = service.icon;
-                              const selected = selectedService?.id === service.id;
-                              return (
-                                <button key={service.id} onClick={() => setSelectedService(service)}
-                                  className={`flex items-center gap-3 p-3.5 rounded-xl border-2 text-left transition-all ${
-                                    selected
-                                      ? "border-violet-500 bg-violet-500/10 shadow-[0_0_0_3px_rgba(139,92,246,0.12)]"
-                                      : "border-violet-500/25 bg-violet-500/5 hover:border-violet-500/60 cursor-pointer"
-                                  }`}
-                                >
-                                  <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0" style={{ backgroundColor: service.color + "22" }}>
-                                    {Icon ? <Icon className="w-5 h-5" style={{ color: service.color }} /> : <span className="text-sm font-bold" style={{ color: service.color }}>{service.name[0]}</span>}
-                                  </div>
-                                  <div className="flex-1 min-w-0">
-                                    <p className="text-sm font-semibold text-foreground truncate">{service.name}</p>
-                                    <p className="text-xs font-bold text-violet-600 dark:text-violet-400">₦{Number(service.price).toLocaleString()}</p>
-                                  </div>
-                                  {selected && <div className="w-2.5 h-2.5 rounded-full bg-violet-500 flex-shrink-0" />}
-                                </button>
-                              );
-                            })}
-                          </div>
-                        </div>
-                      )}
-
-                      {/* Other services */}
-                      {otherServices.length > 0 && (
-                        <div>
-                          {popularServices.length > 0 && (
-                            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">All Services</p>
-                          )}
-                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                            {otherServices.map((service) => {
-                              const Icon     = service.icon;
-                              const selected = selectedService?.id === service.id;
-                              return (
-                                <button key={service.id} onClick={() => setSelectedService(service)}
-                                  className={`flex items-center gap-3 p-3.5 rounded-xl border-2 text-left transition-all ${
-                                    selected
-                                      ? "border-violet-500 bg-violet-500/10 shadow-[0_0_0_3px_rgba(139,92,246,0.12)]"
-                                      : "border-border hover:border-violet-500/40 hover:bg-muted/50 cursor-pointer"
-                                  }`}
-                                >
-                                  <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0" style={{ backgroundColor: service.color + "22" }}>
-                                    {Icon ? <Icon className="w-5 h-5" style={{ color: service.color }} /> : <span className="text-sm font-bold" style={{ color: service.color }}>{service.name[0]}</span>}
-                                  </div>
-                                  <div className="flex-1 min-w-0">
-                                    <p className="text-sm font-semibold text-foreground truncate">{service.name}</p>
-                                    <p className="text-xs font-bold text-violet-600 dark:text-violet-400">₦{Number(service.price).toLocaleString()}</p>
-                                  </div>
-                                  {selected && <div className="w-2.5 h-2.5 rounded-full bg-violet-500 flex-shrink-0" />}
-                                </button>
-                              );
-                            })}
-                          </div>
-                        </div>
-                      )}
+                  <div className="flex items-center justify-between gap-2 mb-4">
+                    <div className="flex items-center gap-2">
+                      <span className="w-6 h-6 rounded-full bg-violet-500 text-white text-xs font-bold flex items-center justify-center">2</span>
+                      <h2 className="font-semibold text-foreground">Select Service</h2>
                     </div>
+
+                    {/* "Change" button — only visible when a service is selected and list is collapsed */}
+                    {selectedService && !serviceListOpen && (
+                      <button
+                        onClick={() => setServiceListOpen(true)}
+                        className="flex items-center gap-1 text-xs font-semibold text-violet-500 hover:text-violet-400 transition-colors px-2.5 py-1.5 rounded-lg hover:bg-violet-500/10"
+                      >
+                        Change <ChevronRight className="w-3.5 h-3.5" />
+                      </button>
+                    )}
+                  </div>
+
+                  {/* ── COLLAPSED: show only selected service ── */}
+                  {selectedService && !serviceListOpen ? (
+                    <AnimatePresence mode="wait">
+                      <motion.div
+                        key="selected-only"
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: "auto" }}
+                        exit={{ opacity: 0, height: 0 }}
+                        transition={{ duration: 0.25 }}
+                      >
+                        <ServiceCard
+                          service={selectedService}
+                          selected={true}
+                          onClick={() => setServiceListOpen(true)}
+                          showCheck={true}
+                        />
+                        <p className="text-xs text-muted-foreground text-center mt-2">
+                          Tap <span className="text-violet-500 font-medium">Change</span> above to pick a different service
+                        </p>
+                      </motion.div>
+                    </AnimatePresence>
+                  ) : (
+                    /* ── EXPANDED: full service list ── */
+                    <AnimatePresence mode="wait">
+                      <motion.div
+                        key="full-list"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        transition={{ duration: 0.2 }}
+                      >
+                        <div className="relative mb-4">
+                          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                          <input
+                            type="text"
+                            placeholder="Search services by name…"
+                            value={serviceSearch}
+                            onChange={(e) => setServiceSearch(e.target.value)}
+                            className="w-full h-10 pl-9 pr-4 rounded-xl bg-muted/50 border border-border text-foreground text-sm outline-none focus:border-violet-500 transition-all"
+                          />
+                        </div>
+
+                        {servicesError ? (
+                          <p className="text-sm text-red-500 flex items-center gap-1.5"><AlertCircle className="w-4 h-4" /> {servicesError}</p>
+                        ) : servicesLoading ? (
+                          <div className="flex items-center gap-2 text-sm text-muted-foreground py-3"><Loader2 className="w-4 h-4 animate-spin" /> Loading services…</div>
+                        ) : filteredServices.length === 0 ? (
+                          <p className="text-sm text-muted-foreground py-3">{serviceSearch ? "No matching services." : "No services available for this country."}</p>
+                        ) : (
+                          <div className="space-y-4">
+
+                            {/* Popular services */}
+                            {popularServices.length > 0 && (
+                              <div>
+                                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Popular</p>
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                                  {popularServices.map((service) => (
+                                    <ServiceCard
+                                      key={service.id}
+                                      service={service}
+                                      selected={selectedService?.id === service.id}
+                                      onClick={() => handleSelectService(service)}
+                                    />
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+
+                            {/* Other services */}
+                            {otherServices.length > 0 && (
+                              <div>
+                                {popularServices.length > 0 && (
+                                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">All Services</p>
+                                )}
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                                  {otherServices.map((service) => (
+                                    <ServiceCard
+                                      key={service.id}
+                                      service={service}
+                                      selected={selectedService?.id === service.id}
+                                      onClick={() => handleSelectService(service)}
+                                    />
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </motion.div>
+                    </AnimatePresence>
                   )}
                 </div>
               </div>
@@ -574,7 +636,7 @@ export default function PurchaseNumber() {
                     <div className="flex justify-between py-2">
                       <span className="text-muted-foreground">Price</span>
                       <span className="font-bold text-violet-600 dark:text-violet-400">
-                        {selectedService ? `${Number(selectedService.price).toLocaleString()} pts` : "—"}
+                        {selectedService ? `₦${Number(selectedService.price).toLocaleString()}` : "—"}
                       </span>
                     </div>
                   </div>

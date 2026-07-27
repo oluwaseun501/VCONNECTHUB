@@ -512,7 +512,7 @@ export default function Dashboard() {
                       </div>
                       <div className="flex justify-between items-center pt-3 border-t border-border mt-3">
                         <div className="text-sm font-medium">Total Cost</div>
-                        <div className="text-xl font-bold text-primary">{Number(selectedService?.price).toLocaleString()} pts</div>
+                        <div className="text-xl font-bold text-primary">₦{Number(selectedService?.price).toLocaleString()}</div>
                       </div>
                     </div>
 

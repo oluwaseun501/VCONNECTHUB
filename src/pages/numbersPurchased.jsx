@@ -7,7 +7,36 @@ import {
 } from "lucide-react";
 import { getAdminOrders } from "./adminApi";
 
-const STATUS_FILTERS = ["ALL", "PENDING", "RECEIVED", "FINISHED", "CANCELED", "EXPIRED"];
+// ─── Client-side expiry (mirrors user-facing MyNumbers logic) ────────────────
+const EXPIRY_MS = 15 * 60 * 1000; // 15 minutes
+
+function effectiveStatus(order) {
+  const rawStatus = order.status?.toUpperCase();
+
+  // Already hard-expired by backend
+  if (rawStatus === "CANCELED" || rawStatus === "TIMEOUT" ||
+      rawStatus === "FINISHED" || rawStatus === "BANNED" || rawStatus === "EXPIRED") {
+    return "EXPIRED";
+  }
+
+  // Has an OTP/SMS → still active regardless of age
+  if (order.sms?.length > 0) return "ACTIVE";
+  if (order.smsCode)          return "ACTIVE";
+
+  // RECEIVED but no stored SMS code → treat as active (SMS may be in transit)
+  if (rawStatus === "RECEIVED") return "ACTIVE";
+
+  // PENDING with no OTP — check age
+  if (order.createdAt) {
+    const age = Date.now() - new Date(order.createdAt).getTime();
+    if (age > EXPIRY_MS) return "EXPIRED";
+  }
+
+  return "ACTIVE";
+}
+
+// ─── Tabs ─────────────────────────────────────────────────────────────────────
+const STATUS_FILTERS = ["ALL", "ACTIVE", "EXPIRED"];
 
 const DATE_PRESETS = [
   { label: "7 days",  days: 7  },
@@ -16,20 +45,21 @@ const DATE_PRESETS = [
   { label: "Custom",  days: null },
 ];
 
-const STATUS_STYLES = {
+// Effective-status badge styles
+const EFF_STYLES = {
+  ACTIVE:  "bg-emerald-500/10 text-emerald-400 border-emerald-500/20",
+  EXPIRED: "bg-red-500/10 text-red-400 border-red-500/20",
+};
+
+// Raw backend status badge styles (used in modal detail)
+const RAW_STYLES = {
   PENDING:  "bg-amber-500/10 text-amber-400 border-amber-500/20",
   RECEIVED: "bg-blue-500/10 text-blue-400 border-blue-500/20",
   FINISHED: "bg-emerald-500/10 text-emerald-400 border-emerald-500/20",
   CANCELED: "bg-red-500/10 text-red-400 border-red-500/20",
+  TIMEOUT:  "bg-red-500/10 text-red-400 border-red-500/20",
   EXPIRED:  "bg-zinc-500/10 text-zinc-400 border-zinc-500/20",
-};
-
-const STATUS_ICON = {
-  PENDING:  <Clock className="w-3 h-3" />,
-  RECEIVED: <AlertCircle className="w-3 h-3" />,
-  FINISHED: <CheckCircle2 className="w-3 h-3" />,
-  CANCELED: <XCircle className="w-3 h-3" />,
-  EXPIRED:  <TimerOff className="w-3 h-3" />,
+  BANNED:   "bg-zinc-500/10 text-zinc-400 border-zinc-500/20",
 };
 
 const PER_PAGE = 10;
@@ -67,17 +97,21 @@ function OrderModal({ order, onClose }) {
   const userName  = typeof order.user === "object" ? order.user?.name  : "User";
   const userEmail = typeof order.user === "object" ? order.user?.email : "—";
   const userId    = typeof order.user === "object" ? order.user?._id   : order.user;
+  const eff       = effectiveStatus(order);
 
   const rows = [
-    { label: "Order ID",   value: `#${order.orderId ?? order._id}` },
-    { label: "Date",       value: formatDate(order.createdAt) },
-    { label: "Status",     value: order.status },
-    { label: "Service",    value: order.product ?? "—" },
-    { label: "Phone",      value: order.phone ?? "—" },
-    { label: "Amount",     value: `₦${Number(order.price ?? 0).toLocaleString()}` },
-    { label: "User",       value: userName },
-    { label: "Email",      value: userEmail },
-    { label: "User ID",    value: String(userId ?? "—") },
+    { label: "Order ID",      value: `#${order.orderId ?? order._id}` },
+    { label: "Date",          value: formatDate(order.createdAt) },
+    { label: "Backend Status",value: order.status ?? "—" },
+    { label: "Service",       value: order.product ?? "—" },
+    { label: "Phone",         value: order.phone ?? "—" },
+    { label: "Amount",        value: `₦${Number(order.price ?? 0).toLocaleString()}` },
+    { label: "User",          value: userName },
+    { label: "Email",         value: userEmail },
+    { label: "User ID",       value: String(userId ?? "—") },
+    ...(order.sms?.length > 0
+      ? order.sms.map((s, i) => ({ label: `SMS ${i + 1}`, value: s.text ?? s.code ?? "—" }))
+      : []),
     ...(order.smsCode ? [{ label: "SMS Code", value: order.smsCode }] : []),
     ...(order.expiresAt ? [{ label: "Expires", value: formatDate(order.expiresAt) }] : []),
   ];
@@ -105,12 +139,19 @@ function OrderModal({ order, onClose }) {
           </button>
         </div>
 
-        {/* Status + amount hero */}
+        {/* Amount + status hero */}
         <div className="px-6 py-5 text-center border-b border-border">
           <p className="text-3xl font-bold text-foreground">₦{Number(order.price ?? 0).toLocaleString()}</p>
           <div className="flex items-center justify-center gap-2 mt-2">
-            <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold uppercase border ${STATUS_STYLES[order.status] ?? "bg-white/5 text-muted-foreground border-border"}`}>
-              {STATUS_ICON[order.status]}
+            {/* Effective status badge */}
+            <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold uppercase border ${EFF_STYLES[eff]}`}>
+              {eff === "ACTIVE"
+                ? <><span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />Active</>
+                : <><XCircle className="w-3 h-3" />Expired</>
+              }
+            </span>
+            {/* Raw backend status (smaller, for admin reference) */}
+            <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium border ${RAW_STYLES[order.status?.toUpperCase()] ?? "bg-white/5 text-muted-foreground border-border"}`}>
               {order.status}
             </span>
             <span className="text-sm text-muted-foreground capitalize">{order.product}</span>
@@ -121,7 +162,7 @@ function OrderModal({ order, onClose }) {
         <div className="px-6 py-4 space-y-3 max-h-72 overflow-y-auto">
           {rows.map(({ label, value }) => (
             <div key={label} className="flex items-start justify-between gap-4 text-sm">
-              <span className="text-muted-foreground flex-shrink-0 w-24">{label}</span>
+              <span className="text-muted-foreground flex-shrink-0 w-28">{label}</span>
               <span className="text-foreground text-right break-all font-mono text-xs">{value}</span>
             </div>
           ))}
@@ -178,8 +219,9 @@ export default function NumbersPurchased() {
       setLoading(true);
       setError("");
       try {
+        // Always fetch ALL from backend — filtering is done client-side
+        // so effectiveStatus (client-side expiry) is applied correctly
         const params = { page, limit: PER_PAGE };
-        if (activeFilter !== "ALL") params.status = activeFilter;
         const { from, to } = getDateRange();
         if (from) params.from = from;
         if (to)   params.to   = to;
@@ -202,21 +244,36 @@ export default function NumbersPurchased() {
     }
     load();
     return () => { cancelled = true; };
-  }, [page, activeFilter, datePreset, customFrom, customTo, showCustom]);
+  }, [page, datePreset, customFrom, customTo, showCustom]);
+
+  // Apply effectiveStatus + tab filter + search client-side
+  const withEffective = orders.map((o) => ({ ...o, _eff: effectiveStatus(o) }));
+
+  const tabFiltered =
+    activeFilter === "ALL"     ? withEffective :
+    activeFilter === "ACTIVE"  ? withEffective.filter((o) => o._eff === "ACTIVE") :
+                                 withEffective.filter((o) => o._eff === "EXPIRED");
 
   const filtered = search
-    ? orders.filter((o) => {
+    ? tabFiltered.filter((o) => {
         const userName = typeof o.user === "object" ? o.user?.name ?? "" : "";
         return (
           userName.toLowerCase().includes(search.toLowerCase()) ||
           String(o.orderId ?? "").includes(search) ||
-          (o.phone ?? "").includes(search) ||
+          (o.phone   ?? "").includes(search) ||
           (o.product ?? "").toLowerCase().includes(search.toLowerCase())
         );
       })
-    : orders;
+    : tabFiltered;
 
   const totalPages = Math.ceil(total / PER_PAGE);
+
+  // Tab counts
+  const counts = {
+    ALL:     withEffective.length,
+    ACTIVE:  withEffective.filter((o) => o._eff === "ACTIVE").length,
+    EXPIRED: withEffective.filter((o) => o._eff === "EXPIRED").length,
+  };
 
   const handleDatePreset = (days) => {
     if (days === null) { setDatePreset(null); setShowCustom(true); }
@@ -267,7 +324,7 @@ export default function NumbersPurchased() {
 
           {/* Filters */}
           <div className="space-y-3">
-            {/* Status */}
+            {/* Status tabs */}
             <div className="flex items-center gap-2 flex-wrap">
               <span className="text-xs text-muted-foreground font-medium w-14">Status</span>
               {STATUS_FILTERS.map((f) => (
@@ -277,8 +334,10 @@ export default function NumbersPurchased() {
                       ? "bg-violet-600 text-white border-violet-600 shadow-lg shadow-violet-500/20"
                       : "bg-white/5 text-muted-foreground border-border hover:border-violet-500/40 hover:text-foreground"
                   }`}>
-                  {f !== "ALL" && STATUS_ICON[f]}
+                  {f === "ACTIVE"  && <span className="w-1.5 h-1.5 rounded-full bg-current" />}
+                  {f === "EXPIRED" && <XCircle className="w-3 h-3" />}
                   {f}
+                  <span className="opacity-60 font-normal">({counts[f]})</span>
                 </button>
               ))}
             </div>
@@ -366,6 +425,7 @@ export default function NumbersPurchased() {
                         const userName  = typeof o.user === "object" ? o.user?.name  ?? "User" : "User";
                         const userEmail = typeof o.user === "object" ? o.user?.email ?? ""     : "";
                         const userId    = typeof o.user === "object" ? o.user?._id             : o.user;
+                        const eff       = o._eff;
                         return (
                           <tr key={o._id}
                             onClick={() => setSelectedOrder(o)}
@@ -386,10 +446,17 @@ export default function NumbersPurchased() {
                             <td className="px-4 py-4 text-muted-foreground hidden lg:table-cell capitalize">{o.product ?? "—"}</td>
                             <td className="px-4 py-4 font-semibold text-foreground">₦{Number(o.price ?? 0).toLocaleString()}</td>
                             <td className="px-4 py-4">
-                              <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold uppercase tracking-wide border ${STATUS_STYLES[o.status] ?? "bg-white/5 text-muted-foreground border-border"}`}>
-                                {STATUS_ICON[o.status]}
-                                {o.status}
-                              </span>
+                              {eff === "ACTIVE" ? (
+                                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold uppercase tracking-wide border bg-emerald-500/10 text-emerald-400 border-emerald-500/20">
+                                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                                  Active
+                                </span>
+                              ) : (
+                                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold uppercase tracking-wide border bg-red-500/10 text-red-400 border-red-500/20">
+                                  <XCircle className="w-3 h-3" />
+                                  Expired
+                                </span>
+                              )}
                             </td>
                             <td className="px-4 py-4 text-muted-foreground text-xs hidden xl:table-cell">{formatDate(o.createdAt)}</td>
                           </tr>
