@@ -55,7 +55,11 @@ function isoToFlag(iso) {
   return iso.toUpperCase().split("").map((c) => String.fromCodePoint(0x1f1e0 + c.charCodeAt(0) - 65)).join("");
 }
 const COUNTRY_LABELS = {
-  usa: "USA", uk: "UK", uae: "UAE", usa2: "USA 2",
+  usa: "USA", uk: "UK", uae: "UAE", usa2: "USA 2", england: "UK",
+};
+const COUNTRY_SEARCH_ALIASES = {
+  england: ["uk", "united kingdom", "england"],
+  usa: ["usa", "united states", "united states of america", "america", "us"],
 };
 
 function titleCase(str) {
@@ -302,7 +306,11 @@ export default function PurchaseNumber() {
   };
 
   /* ── Derived ── */
-  const filteredCountries = countries.filter((c) => c.name.toLowerCase().includes(countrySearch.toLowerCase()));
+  const filteredCountries = countries.filter((c) => {
+  const query = countrySearch.toLowerCase();
+  const aliases = COUNTRY_SEARCH_ALIASES[c.id.toLowerCase()] || [];
+  return c.name.toLowerCase().includes(query) || c.id.toLowerCase().includes(query) || aliases.some((a) => a.includes(query));
+});
   const popularCountries  = countries.filter((c) => POPULAR_COUNTRY_IDS.includes(c.id));
 
   const filteredServices  = services.filter((s) => s.name.toLowerCase().includes(serviceSearch.toLowerCase()));

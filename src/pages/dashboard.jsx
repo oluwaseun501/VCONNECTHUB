@@ -44,7 +44,11 @@ const sortPopular = (list, ids) =>
 
 /* ── Helpers ── */
 const COUNTRY_LABELS = {
-  usa: "USA", uk: "UK", uae: "UAE", usa2: "USA 2",
+  usa: "USA", uk: "UK", uae: "UAE", usa2: "USA 2", england: "UK",
+};
+const COUNTRY_SEARCH_ALIASES = {
+  england: ["uk", "united kingdom", "england"],
+  usa: ["usa", "united states", "united states of america", "america", "us"],
 };
 
 function titleCase(str) {
@@ -227,7 +231,11 @@ export default function Dashboard() {
   const resetFlow = () => { setStep(1); setPin(["", "", "", ""]); setBuyError(""); setNumberResult(null); setOtp(null); };
 
   const walletBalance = user?.walletBalance ?? user?.balance ?? 0;
-  const filteredCountries = countries.filter((c) => c.name.toLowerCase().includes(searchCountry.toLowerCase()));
+  const filteredCountries = countries.filter((c) => {
+  const query = searchCountry.toLowerCase();
+  const aliases = COUNTRY_SEARCH_ALIASES[c.id.toLowerCase()] || [];
+  return c.name.toLowerCase().includes(query) || c.id.toLowerCase().includes(query) || aliases.some((a) => a.includes(query));
+});
   const popularCountries  = filteredCountries.filter((c) => POPULAR_COUNTRY_IDS.includes(c.id));
   const otherCountries    = filteredCountries.filter((c) => !POPULAR_COUNTRY_IDS.includes(c.id));
   const popularServices   = services.filter((s) => POPULAR_SERVICE_IDS.includes(s.id.toLowerCase()));

@@ -66,7 +66,11 @@ function StatusBadge({ status }) {
     received: "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/25",
     expired:  "bg-red-500/15 text-red-500 dark:text-red-400 border-red-500/25",
   };
-  const labels = { waiting: "⏳ Waiting for OTP", received: "✅ OTP Received", expired: "❌ Expired" };
+  const labels = {
+  waiting:  <span className="flex items-center gap-1"><Clock className="w-3 h-3" /> Waiting for OTP</span>,
+  received: <span className="flex items-center gap-1"><CheckCircle2 className="w-3 h-3" /> OTP Received</span>,
+  expired:  <span className="flex items-center gap-1"><XCircle className="w-3 h-3" /> Expired</span>,
+};
 
   return (
     <span className={`text-xs font-semibold px-2.5 py-1 rounded-full border ${styles[status] || styles.waiting}`}>
@@ -176,10 +180,9 @@ export default function MyNumbers() {
       {!loading && numbers.length > 0 && (
         <div className="flex gap-2 mb-6 flex-wrap">
           {[
-            { key: "all",      label: "All" },
-            { key: "waiting",  label: "⏳ Waiting" },
-            { key: "received", label: "✅ Received" },
-            { key: "expired",  label: "❌ Expired" },
+            { key: "waiting",  label: <span className="flex items-center gap-1"><Clock className="w-3.5 h-3.5" /> Waiting</span> },
+{ key: "received", label: <span className="flex items-center gap-1"><CheckCircle2 className="w-3.5 h-3.5" /> Received</span> },
+{ key: "expired",  label: <span className="flex items-center gap-1"><XCircle className="w-3.5 h-3.5" /> Expired</span> },
           ].map((tab) => (
             <button
               key={tab.key}
