@@ -35,14 +35,44 @@ function timeAgo(iso) {
   return `${Math.floor(h / 24)}d ago`;
 }
 
+function useCountdown(purchasedAt, isWaiting) {
+  const [secsLeft, setSecsLeft] = useState(null);
+  useEffect(() => {
+    if (!isWaiting || !purchasedAt) return;
+    const expiry = new Date(purchasedAt).getTime() + 15 * 60 * 1000;
+    const tick = () => {
+      const left = Math.max(0, Math.floor((expiry - Date.now()) / 1000));
+      setSecsLeft(left);
+    };
+    tick();
+    const id = setInterval(tick, 1000);
+    return () => clearInterval(id);
+  }, [purchasedAt, isWaiting]);
+  return secsLeft;
+}
+
+
+function Countdown({ purchasedAt, status }) {
+  const secs = useCountdown(purchasedAt, status === "waiting");
+  if (status !== "waiting" || secs === null) return null;
+  const m = Math.floor(secs / 60);
+  const s = secs % 60;
+  const urgent = secs < 120;
+  return (
+    <span className={`text-xs font-mono font-semibold ${urgent ? "text-red-500" : "text-amber-500"}`}>
+      {m}:{String(s).padStart(2, "0")} remaining
+    </span>
+  );
+}
 // Backend statuses are uppercase: PENDING, RECEIVED, FINISHED, CANCELED, TIMEOUT, BANNED
 function normalizeStatus(status) {
   switch (status) {
     case "PENDING":
       return "waiting";
     case "RECEIVED":
-    case "FINISHED":
-      return "received";
+  return "received";
+case "FINISHED":
+  return "expired";
     case "CANCELED":
     case "TIMEOUT":
     case "BANNED":
@@ -287,7 +317,8 @@ export default function MyNumbers() {
                       </div>
                     )}
 
-                    <p className="text-xs text-muted-foreground mt-2">Purchased {timeAgo(entry.purchasedAt)}</p>
+                   <p className="text-xs text-muted-foreground mt-2">Purchased {timeAgo(entry.purchasedAt)}</p>
+<Countdown purchasedAt={entry.purchasedAt} status={entry.status} />
                   </div>
                 </div>
               </motion.div>
