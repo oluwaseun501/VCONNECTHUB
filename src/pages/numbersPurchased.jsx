@@ -23,10 +23,7 @@ function effectiveStatus(order) {
   if (order.sms?.length > 0) return "ACTIVE";
   if (order.smsCode)          return "ACTIVE";
 
-  // RECEIVED but no stored SMS code → treat as active (SMS may be in transit)
-  if (rawStatus === "RECEIVED") return "ACTIVE";
-
-  // PENDING with no OTP — check age
+  // PENDING or RECEIVED with no OTP — check age
   if (order.createdAt) {
     const age = Date.now() - new Date(order.createdAt).getTime();
     if (age > EXPIRY_MS) return "EXPIRED";

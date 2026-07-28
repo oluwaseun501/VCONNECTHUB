@@ -100,6 +100,7 @@ function isActive(status) {
   return status === "waiting" || status === "received";
 }
 
+// Inline mini badge (used inside metadata line)
 function CountdownBadge({ purchasedAt, status }) {
   const secs = useCountdown(purchasedAt, status === "waiting");
   if (status !== "waiting" || secs === null) return null;
@@ -111,6 +112,59 @@ function CountdownBadge({ purchasedAt, status }) {
       <Clock className="w-3 h-3" />
       {m}:{String(s).padStart(2, "0")} remaining
     </span>
+  );
+}
+
+// Prominent timer bar shown on the card when number is active and within 15 min window
+function TimerBar({ purchasedAt, status }) {
+  // Show for any active number that still has time left — don't rely on exact status string
+  const active = isActive(status) && !!purchasedAt;
+  const secs = useCountdown(purchasedAt, active);
+  if (!active || secs === null || secs <= 0) return null;
+
+  const total   = 15 * 60; // 15 minutes in seconds
+  const pct     = Math.max(0, Math.min(100, (secs / total) * 100));
+  const m       = Math.floor(secs / 60);
+  const s       = secs % 60;
+  const urgent  = secs < 120;  // last 2 minutes
+  const warning = secs < 300;  // last 5 minutes
+
+  const barColor = urgent  ? "bg-red-500"
+                 : warning ? "bg-amber-500"
+                 :           "bg-emerald-500";
+
+  const textColor = urgent  ? "text-red-500"
+                  : warning ? "text-amber-500"
+                  :           "text-emerald-500";
+
+  const bgColor = urgent  ? "bg-red-500/10 border-red-500/20"
+                : warning ? "bg-amber-500/10 border-amber-500/20"
+                :           "bg-emerald-500/10 border-emerald-500/20";
+
+  return (
+    <div className={`mt-3 rounded-xl border px-4 py-3 ${bgColor}`}>
+      <div className="flex items-center justify-between mb-2">
+        <div className="flex items-center gap-1.5">
+          <Clock className={`w-3.5 h-3.5 ${textColor}`} />
+          <span className={`text-xs font-semibold ${textColor}`}>
+            {urgent ? "Expiring soon!" : warning ? "Time running out" : "Number active"}
+          </span>
+        </div>
+        <span className={`text-sm font-mono font-bold tabular-nums ${textColor}`}>
+          {m}:{String(s).padStart(2, "0")}
+        </span>
+      </div>
+      {/* Progress bar */}
+      <div className="w-full h-1.5 rounded-full bg-white/10 overflow-hidden">
+        <div
+          className={`h-full rounded-full transition-all duration-1000 ${barColor} ${urgent ? "animate-pulse" : ""}`}
+          style={{ width: `${pct}%` }}
+        />
+      </div>
+      <p className="text-[11px] text-muted-foreground mt-1.5">
+        This number expires in {m} min {s}s — send the SMS now
+      </p>
+    </div>
   );
 }
 
@@ -475,6 +529,9 @@ export default function MyNumbers() {
                       )}
                     </div>
                   </div>
+
+                  {/* Countdown timer bar — only shown while number is active/waiting */}
+                  <TimerBar purchasedAt={entry.purchasedAt} status={entry.status} />
 
                   {/* SMS Verification Code section */}
                   <SmsSection
