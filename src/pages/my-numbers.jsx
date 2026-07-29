@@ -756,6 +756,14 @@ export default function MyNumbers() {
 
 
   // ==========================================================
+  // FETCH ON MOUNT  ← THE FIX
+  // ==========================================================
+  useEffect(() => {
+    load();
+  }, []);
+
+
+  // ==========================================================
   // COPY NUMBER
   // ==========================================================
   const copyNumber = async (
@@ -1117,7 +1125,11 @@ export default function MyNumbers() {
                 disabled={
                   loading
                 }
-                className="flex items-center gap-2 px-3 py-2 rounded-xl border border-border bg-card hover:bg-muted text-muted-foreground text-sm transition-all disabled:opacity-50"
+                className={`flex items-center gap-2 px-3 py-2 rounded-xl border text-sm transition-all disabled:cursor-not-allowed ${
+                  loading
+                    ? "border-violet-500/40 bg-violet-500/10 text-violet-500"
+                    : "border-border bg-card hover:bg-muted text-muted-foreground"
+                }`}
               >
                 <RefreshCw
                   className={`w-4 h-4 ${
@@ -1127,7 +1139,7 @@ export default function MyNumbers() {
                   }`}
                 />
 
-                Refresh
+                {loading ? "Refreshing…" : "Refresh"}
               </button>
 
               <Link href="/purchase-number">
