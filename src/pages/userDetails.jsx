@@ -192,6 +192,8 @@ export default function UserDetails() {
   const [userError, setUserError] = useState("");
 
   
+
+  
   const [transactions, setTransactions] = useState([]);
   const [txLoading, setTxLoading] = useState(false);
 
