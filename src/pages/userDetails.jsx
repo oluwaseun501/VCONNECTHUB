@@ -6,7 +6,7 @@ import {
   ArrowLeft, Mail, Wallet, ShoppingBag, Calendar, Shield, ShieldOff,
   Trash2, Plus, Ban, CheckCircle2, ChevronRight, X, AlertTriangle,
   Phone, Hash, CreditCard, Activity, Clock, TrendingUp, TrendingDown,
-  RefreshCw, Lock, Loader2,
+  RefreshCw, Lock, Loader2, ThumbsUp, ThumbsDown, CheckSquare,
 } from "lucide-react";
 import {
   getAdminUser,
@@ -15,8 +15,11 @@ import {
   fundUserWallet,
   debitUserWallet,
   getAdminTransactions,
+  approveTransaction,
+  rejectTransaction,
   getAdminOrders,
-  getAllBoostOrders,   
+  markOrderComplete,
+  getAllBoostOrders,
   sendPasswordReset,
 } from "./adminApi";
 
@@ -144,10 +147,84 @@ function AddFundsModal({ user, onConfirm, onCancel, loading }) {
   );
 }
 
+// ── Debit Wallet modal ─────────────────────────────────────────────────
+function DebitFundsModal({ user, onConfirm, onCancel, loading }) {
+  const [amount, setAmount] = useState("");
+  const [reason, setReason] = useState("");
+  const quick = ["500", "1000", "2000", "5000"];
+  return (
+    <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
+      <div className="w-full max-w-sm glass-card rounded-2xl p-6 space-y-5">
+        <div className="flex items-center justify-between">
+          <h3 className="font-bold text-foreground text-lg">Debit Wallet</h3>
+          <button onClick={onCancel} className="text-muted-foreground hover:text-foreground transition-colors">
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+        <div className="flex items-center gap-3 p-3 rounded-xl bg-red-500/[0.05] border border-red-500/[0.12]">
+          <div className={`w-9 h-9 rounded-full ${colorFor(user._id)} flex items-center justify-center text-white text-xs font-bold flex-shrink-0`}>
+            {getInitials(user.name)}
+          </div>
+          <div>
+            <p className="text-sm font-medium text-foreground">{user.name}</p>
+            <p className="text-xs text-muted-foreground">Current balance: {fmt(user.balance)}</p>
+          </div>
+        </div>
+        <div className="space-y-2">
+          <label className="text-xs text-muted-foreground font-medium uppercase tracking-wide">Amount to Debit (₦)</label>
+          <div className="relative">
+            <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground font-medium text-sm">₦</span>
+            <input
+              type="number"
+              min="1"
+              step="1"
+              placeholder="0"
+              value={amount}
+              onChange={(e) => setAmount(e.target.value)}
+              className="w-full h-11 pl-8 pr-4 rounded-xl bg-white/5 border border-border text-sm text-foreground placeholder:text-muted-foreground outline-none focus:border-red-500/50 focus:shadow-[0_0_0_3px_rgba(239,68,68,0.12)] transition-all"
+            />
+          </div>
+          <div className="flex gap-2">
+            {quick.map((q) => (
+              <button key={q} onClick={() => setAmount(q)}
+                className={`flex-1 h-8 rounded-lg text-xs font-semibold border transition-colors ${amount === q ? "bg-red-500/20 text-red-300 border-red-500/40" : "border-border text-muted-foreground hover:bg-white/5"}`}>
+                ₦{q}
+              </button>
+            ))}
+          </div>
+        </div>
+        <div className="space-y-2">
+          <label className="text-xs text-muted-foreground font-medium uppercase tracking-wide">Reason (optional)</label>
+          <input
+            type="text"
+            placeholder="e.g. Chargeback, Correction..."
+            value={reason}
+            onChange={(e) => setReason(e.target.value)}
+            className="w-full h-11 px-4 rounded-xl bg-white/5 border border-border text-sm text-foreground placeholder:text-muted-foreground outline-none focus:border-red-500/50 focus:shadow-[0_0_0_3px_rgba(239,68,68,0.12)] transition-all"
+          />
+        </div>
+        <div className="flex gap-3">
+          <button onClick={onCancel} disabled={loading} className="flex-1 h-10 rounded-xl border border-border text-sm text-muted-foreground hover:bg-white/5 transition-colors disabled:opacity-50">
+            Cancel
+          </button>
+          <button
+            disabled={!amount || isNaN(amount) || Number(amount) <= 0 || loading}
+            onClick={() => onConfirm(Number(amount), reason)}
+            className="flex-1 h-10 rounded-xl text-sm font-semibold bg-red-500/10 border border-red-500/30 text-red-400 hover:bg-red-500/20 disabled:opacity-40 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2"
+          >
+            {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : `Debit ${amount ? fmt(amount) : "Wallet"}`}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ── Status / type chips ───────────────────────────────────────────────
 function TxnStatus({ status }) {
   const map = {
     successful: "bg-emerald-500/10 text-emerald-400 border-emerald-500/20",
+    credited:   "bg-emerald-500/10 text-emerald-400 border-emerald-500/20",
     pending:    "bg-amber-500/10 text-amber-400 border-amber-500/20",
     failed:     "bg-red-500/10 text-red-400 border-red-500/20",
   };
@@ -174,10 +251,13 @@ function TypeChip({ type }) {
 }
 
 const ORDER_STATUS_STYLES = {
-  PENDING:  "bg-amber-500/10 text-amber-400 border-amber-500/20",
-  RECEIVED: "bg-blue-500/10 text-blue-400 border-blue-500/20",
-  FINISHED: "bg-emerald-500/10 text-emerald-400 border-emerald-500/20",
-  CANCELED: "bg-red-500/10 text-red-400 border-red-500/20",
+  PENDING:   "bg-amber-500/10 text-amber-400 border-amber-500/20",
+  RECEIVED:  "bg-blue-500/10 text-blue-400 border-blue-500/20",
+  FINISHED:  "bg-emerald-500/10 text-emerald-400 border-emerald-500/20",
+  COMPLETED: "bg-emerald-500/10 text-emerald-400 border-emerald-500/20",
+  CANCELED:  "bg-red-500/10 text-red-400 border-red-500/20",
+  TIMEOUT:   "bg-zinc-500/10 text-zinc-400 border-zinc-500/20",
+  BANNED:    "bg-red-900/20 text-red-300 border-red-900/30",
 };
 
 // ── Main component ─────────────────────────────────────────────────────
@@ -191,9 +271,6 @@ export default function UserDetails() {
   const [userLoading, setUserLoading] = useState(true);
   const [userError, setUserError] = useState("");
 
-  
-
-  
   const [transactions, setTransactions] = useState([]);
   const [txLoading, setTxLoading] = useState(false);
 
@@ -201,9 +278,9 @@ export default function UserDetails() {
   const [ordersLoading, setOrdersLoading] = useState(false);
 
   const [boostOrders, setBoostOrders] = useState([]);
-const [boostLoading, setBoostLoading] = useState(false);
+  const [boostLoading, setBoostLoading] = useState(false);
 
-  // Modal state
+  // Modal state — string for simple modals, object { type, id } for row actions
   const [modal, setModal] = useState(null);
   const [actionLoading, setActionLoading] = useState(false);
 
@@ -222,9 +299,7 @@ const [boostLoading, setBoostLoading] = useState(false);
       setUserError("");
       try {
         const { data } = await getAdminUser(id);
-        // API may return { user: {...} } or the object directly
         const raw = data?.user ?? data;
-        // Normalize field variants so UI always has consistent keys
         setUser({
           ...raw,
           balance:         raw.balance         ?? raw.walletBalance ?? 0,
@@ -250,7 +325,6 @@ const [boostLoading, setBoostLoading] = useState(false);
     async function load() {
       setTxLoading(true);
       try {
-        // Fetch all transactions and filter by this user's _id
         const { data } = await getAdminTransactions({ limit: 100 });
         const list = Array.isArray(data) ? data : (data.transactions ?? []);
         setTransactions(list.filter((t) => {
@@ -281,7 +355,7 @@ const [boostLoading, setBoostLoading] = useState(false);
     load();
   }, [activeTab, id]);
 
-    useEffect(() => {
+  useEffect(() => {
     if (activeTab !== "Boost Orders" || boostOrders.length > 0) return;
     async function load() {
       setBoostLoading(true);
@@ -299,6 +373,7 @@ const [boostLoading, setBoostLoading] = useState(false);
   }, [activeTab, id]);
 
   // ── Action handlers ──
+
   const handleAddFunds = async (amount) => {
     setActionLoading(true);
     try {
@@ -308,6 +383,71 @@ const [boostLoading, setBoostLoading] = useState(false);
       showToast(`${fmt(amount)} added to ${user.name}'s account`);
     } catch (err) {
       showToast(err.response?.data?.message || "Failed to add funds.", "red");
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleDebitFunds = async (amount, reason) => {
+    setActionLoading(true);
+    try {
+      await debitUserWallet(id, amount, reason);
+      setUser((u) => ({ ...u, balance: Math.max(0, (u.balance ?? 0) - amount) }));
+      setModal(null);
+      showToast(`${fmt(amount)} debited from ${user.name}'s account`, "amber");
+    } catch (err) {
+      showToast(err.response?.data?.message || "Failed to debit wallet.", "red");
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleApproveTransaction = async () => {
+    const txId = modal?.id;
+    setActionLoading(true);
+    try {
+      await approveTransaction(txId);
+      setTransactions((prev) =>
+        prev.map((t) => t._id === txId ? { ...t, status: "successful" } : t)
+      );
+      setModal(null);
+      showToast("Transaction approved successfully");
+    } catch (err) {
+      showToast(err.response?.data?.message || "Failed to approve transaction.", "red");
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleRejectTransaction = async () => {
+    const txId = modal?.id;
+    setActionLoading(true);
+    try {
+      await rejectTransaction(txId);
+      setTransactions((prev) =>
+        prev.map((t) => t._id === txId ? { ...t, status: "failed" } : t)
+      );
+      setModal(null);
+      showToast("Transaction rejected", "amber");
+    } catch (err) {
+      showToast(err.response?.data?.message || "Failed to reject transaction.", "red");
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleMarkOrderComplete = async () => {
+    const orderId = modal?.id;
+    setActionLoading(true);
+    try {
+      await markOrderComplete(orderId);
+      setOrders((prev) =>
+        prev.map((o) => o._id === orderId ? { ...o, status: "FINISHED" } : o)
+      );
+      setModal(null);
+      showToast("Order marked as completed");
+    } catch (err) {
+      showToast(err.response?.data?.message || "Failed to complete order.", "red");
     } finally {
       setActionLoading(false);
     }
@@ -421,7 +561,6 @@ const [boostLoading, setBoostLoading] = useState(false);
   const avatarColor = colorFor(user._id);
   const isAdmin = user.isAdmin ?? false;
   const isBanned = user.isBanned ?? false;
-  
 
   return (
     <div className="min-h-screen bg-background flex">
@@ -482,6 +621,12 @@ const [boostLoading, setBoostLoading] = useState(false);
                   className="inline-flex items-center gap-1.5 h-9 px-4 rounded-xl text-sm font-semibold bg-gradient-to-r from-violet-600 to-fuchsia-600 text-white hover:from-violet-500 hover:to-fuchsia-500 transition-all"
                 >
                   <Plus className="w-4 h-4" /> Add Funds
+                </button>
+                <button
+                  onClick={() => setModal("debitFunds")}
+                  className="inline-flex items-center gap-1.5 h-9 px-4 rounded-xl text-sm font-semibold border border-red-500/30 text-red-400 hover:bg-red-500/10 transition-colors"
+                >
+                  <TrendingDown className="w-4 h-4" /> Debit Wallet
                 </button>
                 <button
                   onClick={() => setModal(isBanned ? "unban" : "ban")}
@@ -558,7 +703,7 @@ const [boostLoading, setBoostLoading] = useState(false);
                 </div>
               </div>
 
-              {/* Avatar info */}
+              {/* Wallet Overview */}
               <div className="glass-card rounded-2xl p-5 space-y-4">
                 <h2 className="font-semibold text-foreground flex items-center gap-2">
                   <TrendingUp className="w-4 h-4 text-fuchsia-400" /> Wallet Overview
@@ -601,13 +746,14 @@ const [boostLoading, setBoostLoading] = useState(false);
                         <th className="text-left px-4 py-3.5 font-medium hidden md:table-cell">Description</th>
                         <th className="text-left px-4 py-3.5 font-medium hidden lg:table-cell">Date</th>
                         <th className="text-left px-4 py-3.5 font-medium">Status</th>
-                        <th className="text-right px-6 py-3.5 font-medium">Amount</th>
+                        <th className="text-right px-4 py-3.5 font-medium">Amount</th>
+                        <th className="text-right px-6 py-3.5 font-medium">Actions</th>
                       </tr>
                     </thead>
                     <tbody>
                       {transactions.length === 0 ? (
                         <tr>
-                          <td colSpan={6} className="px-6 py-16 text-center text-muted-foreground text-sm">No transactions found.</td>
+                          <td colSpan={7} className="px-6 py-16 text-center text-muted-foreground text-sm">No transactions found.</td>
                         </tr>
                       ) : (
                         transactions.map((t, i) => (
@@ -617,8 +763,30 @@ const [boostLoading, setBoostLoading] = useState(false);
                             <td className="px-4 py-3.5 text-foreground text-xs hidden md:table-cell max-w-[200px] truncate">{t.description}</td>
                             <td className="px-4 py-3.5 text-muted-foreground text-xs hidden lg:table-cell">{formatDate(t.createdAt)}</td>
                             <td className="px-4 py-3.5"><TxnStatus status={t.status} /></td>
-                            <td className={`px-6 py-3.5 text-right font-bold ${t.type === "credit" ? "text-emerald-400" : "text-red-400"}`}>
+                            <td className={`px-4 py-3.5 text-right font-bold ${t.type === "credit" ? "text-emerald-400" : "text-red-400"}`}>
                               {t.type === "credit" ? "+" : "-"}₦{(t.amount ?? 0).toLocaleString()}
+                            </td>
+                            <td className="px-6 py-3.5 text-right">
+                              {t.status === "pending" ? (
+                                <div className="flex items-center justify-end gap-1.5">
+                                  <button
+                                    onClick={() => setModal({ type: "approveTx", id: t._id })}
+                                    title="Approve transaction"
+                                    className="inline-flex items-center gap-1 h-7 px-2.5 rounded-lg text-[11px] font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 hover:bg-emerald-500/20 transition-colors"
+                                  >
+                                    <ThumbsUp className="w-3 h-3" /> Approve
+                                  </button>
+                                  <button
+                                    onClick={() => setModal({ type: "rejectTx", id: t._id })}
+                                    title="Reject transaction"
+                                    className="inline-flex items-center gap-1 h-7 px-2.5 rounded-lg text-[11px] font-semibold bg-red-500/10 text-red-400 border border-red-500/20 hover:bg-red-500/20 transition-colors"
+                                  >
+                                    <ThumbsDown className="w-3 h-3" /> Reject
+                                  </button>
+                                </div>
+                              ) : (
+                                <span className="text-xs text-muted-foreground">—</span>
+                              )}
                             </td>
                           </tr>
                         ))
@@ -651,13 +819,14 @@ const [boostLoading, setBoostLoading] = useState(false);
                         <th className="text-left px-4 py-3.5 font-medium hidden md:table-cell">Service</th>
                         <th className="text-left px-4 py-3.5 font-medium hidden lg:table-cell">Country</th>
                         <th className="text-left px-4 py-3.5 font-medium">Status</th>
-                        <th className="text-right px-6 py-3.5 font-medium">Price</th>
+                        <th className="text-right px-4 py-3.5 font-medium">Price</th>
+                        <th className="text-right px-6 py-3.5 font-medium">Actions</th>
                       </tr>
                     </thead>
                     <tbody>
                       {orders.length === 0 ? (
                         <tr>
-                          <td colSpan={6} className="px-6 py-16 text-center text-muted-foreground text-sm">No orders found.</td>
+                          <td colSpan={7} className="px-6 py-16 text-center text-muted-foreground text-sm">No orders found.</td>
                         </tr>
                       ) : (
                         orders.map((o, i) => (
@@ -671,7 +840,20 @@ const [boostLoading, setBoostLoading] = useState(false);
                                 {o.status}
                               </span>
                             </td>
-                            <td className="px-6 py-3.5 text-right font-semibold text-foreground">₦{o.price}</td>
+                            <td className="px-4 py-3.5 text-right font-semibold text-foreground">₦{o.price}</td>
+                            <td className="px-6 py-3.5 text-right">
+                              {(o.status === "PENDING" || o.status === "RECEIVED") ? (
+                                <button
+                                  onClick={() => setModal({ type: "completeOrder", id: o._id })}
+                                  title="Mark as completed"
+                                  className="inline-flex items-center gap-1 h-7 px-2.5 rounded-lg text-[11px] font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 hover:bg-emerald-500/20 transition-colors"
+                                >
+                                  <CheckSquare className="w-3 h-3" /> Complete
+                                </button>
+                              ) : (
+                                <span className="text-xs text-muted-foreground">—</span>
+                              )}
+                            </td>
                           </tr>
                         ))
                       )}
@@ -682,69 +864,67 @@ const [boostLoading, setBoostLoading] = useState(false);
             </div>
           )}
 
-          
-
           {/* ── Tab: Boost Orders ── */}
-{activeTab === "Boost Orders" && (
-  <div className="glass-card rounded-2xl overflow-hidden">
-    <div className="px-6 py-4 border-b border-border flex items-center justify-between">
-      <h2 className="font-semibold text-foreground">Boost Orders</h2>
-      <span className="text-xs text-muted-foreground">{boostOrders.length} orders</span>
-    </div>
-    {boostLoading ? (
-      <div className="flex items-center justify-center py-16">
-        <Loader2 className="w-5 h-5 animate-spin text-violet-400" />
-      </div>
-    ) : (
-      <div className="overflow-x-auto">
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="border-b border-border text-xs text-muted-foreground uppercase tracking-wider">
-              <th className="text-left px-6 py-3.5 font-medium">Order ID</th>
-              <th className="text-left px-4 py-3.5 font-medium">Service</th>
-              <th className="text-left px-4 py-3.5 font-medium hidden md:table-cell">Link</th>
-              <th className="text-left px-4 py-3.5 font-medium">Qty</th>
-              <th className="text-left px-4 py-3.5 font-medium">Status</th>
-              <th className="text-right px-6 py-3.5 font-medium">Charge</th>
-            </tr>
-          </thead>
-          <tbody>
-            {boostOrders.length === 0 ? (
-              <tr>
-                <td colSpan={6} className="px-6 py-16 text-center text-muted-foreground text-sm">
-                  No boost orders found.
-                </td>
-              </tr>
-            ) : (
-              boostOrders.map((o, i) => (
-                <tr key={o._id} className={`border-b border-border/50 hover:bg-white/5 transition-colors ${i === boostOrders.length - 1 ? "border-b-0" : ""}`}>
-                  <td className="px-6 py-3.5 font-mono text-xs text-muted-foreground">#{o._id?.slice(-8)}</td>
-                  <td className="px-4 py-3.5 text-foreground text-xs max-w-[160px] truncate">
-                    {typeof o.service === "object" ? o.service?.name : o.serviceName ?? "—"}
-                  </td>
-                  <td className="px-4 py-3.5 text-muted-foreground text-xs hidden md:table-cell max-w-[160px] truncate">
-                    <a href={o.link} target="_blank" rel="noreferrer" className="text-violet-400 hover:underline">
-                      {o.link}
-                    </a>
-                  </td>
-                  <td className="px-4 py-3.5 text-foreground">{o.quantity?.toLocaleString()}</td>
-                  <td className="px-4 py-3.5">
-                    <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold uppercase border ${ORDER_STATUS_STYLES[o.status] ?? "bg-white/5 text-muted-foreground border-border"}`}>
-                      {o.status}
-                    </span>
-                  </td>
-                  <td className="px-6 py-3.5 text-right font-bold text-red-400">
-                    -{fmt(o.charge ?? o.totalPrice ?? 0)}
-                  </td>
-                </tr>
-              ))
-            )}
-          </tbody>
-        </table>
-      </div>
-    )}
-  </div>
-)}
+          {activeTab === "Boost Orders" && (
+            <div className="glass-card rounded-2xl overflow-hidden">
+              <div className="px-6 py-4 border-b border-border flex items-center justify-between">
+                <h2 className="font-semibold text-foreground">Boost Orders</h2>
+                <span className="text-xs text-muted-foreground">{boostOrders.length} orders</span>
+              </div>
+              {boostLoading ? (
+                <div className="flex items-center justify-center py-16">
+                  <Loader2 className="w-5 h-5 animate-spin text-violet-400" />
+                </div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="border-b border-border text-xs text-muted-foreground uppercase tracking-wider">
+                        <th className="text-left px-6 py-3.5 font-medium">Order ID</th>
+                        <th className="text-left px-4 py-3.5 font-medium">Service</th>
+                        <th className="text-left px-4 py-3.5 font-medium hidden md:table-cell">Link</th>
+                        <th className="text-left px-4 py-3.5 font-medium">Qty</th>
+                        <th className="text-left px-4 py-3.5 font-medium">Status</th>
+                        <th className="text-right px-6 py-3.5 font-medium">Charge</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {boostOrders.length === 0 ? (
+                        <tr>
+                          <td colSpan={6} className="px-6 py-16 text-center text-muted-foreground text-sm">
+                            No boost orders found.
+                          </td>
+                        </tr>
+                      ) : (
+                        boostOrders.map((o, i) => (
+                          <tr key={o._id} className={`border-b border-border/50 hover:bg-white/5 transition-colors ${i === boostOrders.length - 1 ? "border-b-0" : ""}`}>
+                            <td className="px-6 py-3.5 font-mono text-xs text-muted-foreground">#{o._id?.slice(-8)}</td>
+                            <td className="px-4 py-3.5 text-foreground text-xs max-w-[160px] truncate">
+                              {typeof o.service === "object" ? o.service?.name : o.serviceName ?? "—"}
+                            </td>
+                            <td className="px-4 py-3.5 text-muted-foreground text-xs hidden md:table-cell max-w-[160px] truncate">
+                              <a href={o.link} target="_blank" rel="noreferrer" className="text-violet-400 hover:underline">
+                                {o.link}
+                              </a>
+                            </td>
+                            <td className="px-4 py-3.5 text-foreground">{o.quantity?.toLocaleString()}</td>
+                            <td className="px-4 py-3.5">
+                              <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold uppercase border ${ORDER_STATUS_STYLES[o.status] ?? "bg-white/5 text-muted-foreground border-border"}`}>
+                                {o.status}
+                              </span>
+                            </td>
+                            <td className="px-6 py-3.5 text-right font-bold text-red-400">
+                              -{fmt(o.charge ?? o.totalPrice ?? 0)}
+                            </td>
+                          </tr>
+                        ))
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+          )}
 
           {/* ── Tab: Danger Zone ── */}
           {activeTab === "Danger Zone" && (
@@ -859,6 +1039,49 @@ const [boostLoading, setBoostLoading] = useState(false);
       {modal === "addFunds" && (
         <AddFundsModal user={user} onConfirm={handleAddFunds} onCancel={() => setModal(null)} loading={actionLoading} />
       )}
+      {modal === "debitFunds" && (
+        <DebitFundsModal user={user} onConfirm={handleDebitFunds} onCancel={() => setModal(null)} loading={actionLoading} />
+      )}
+
+      {/* Approve transaction confirm */}
+      {modal?.type === "approveTx" && (
+        <ConfirmModal
+          title="Approve this transaction?"
+          description="The transaction status will be changed to successful."
+          confirmLabel="Yes, Approve"
+          confirmClass="bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 hover:bg-emerald-500/20"
+          onConfirm={handleApproveTransaction}
+          onCancel={() => setModal(null)}
+          loading={actionLoading}
+        />
+      )}
+
+      {/* Reject transaction confirm */}
+      {modal?.type === "rejectTx" && (
+        <ConfirmModal
+          title="Reject this transaction?"
+          description="The transaction status will be changed to failed."
+          confirmLabel="Yes, Reject"
+          confirmClass="bg-red-500/10 text-red-400 border border-red-500/30 hover:bg-red-500/20"
+          onConfirm={handleRejectTransaction}
+          onCancel={() => setModal(null)}
+          loading={actionLoading}
+        />
+      )}
+
+      {/* Mark order complete confirm */}
+      {modal?.type === "completeOrder" && (
+        <ConfirmModal
+          title="Mark order as completed?"
+          description="The order status will be changed to FINISHED."
+          confirmLabel="Yes, Complete"
+          confirmClass="bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 hover:bg-emerald-500/20"
+          onConfirm={handleMarkOrderComplete}
+          onCancel={() => setModal(null)}
+          loading={actionLoading}
+        />
+      )}
+
       {modal === "ban" && (
         <ConfirmModal
           title="Ban this user?"

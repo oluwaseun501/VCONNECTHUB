@@ -478,7 +478,7 @@ export default function MyNumbers() {
 
     // Immediate check on mount, then every 10 s
     pollSms();
-    const intervalId = setInterval(pollSms, 10000);
+    const intervalId = setInterval(pollSms, 5000);
 
     return () => {
       clearInterval(intervalId);
