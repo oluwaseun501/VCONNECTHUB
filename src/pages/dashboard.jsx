@@ -287,7 +287,7 @@ export default function Dashboard() {
               {loadingStats ? <Loader2 className="w-6 h-6 animate-spin" /> : activeNumbers}
             </div>
             <div className="mt-4 text-sm text-yellow-500 flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-yellow-500 animate-pulse" /> Expiring in ~15 mins
+              <span className="w-2 h-2 rounded-full bg-yellow-500 animate-pulse" /> Instant Activation
             </div>
           </CardContent>
         </Card>
