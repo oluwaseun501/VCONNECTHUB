@@ -154,10 +154,25 @@ function isActive(status) {
 }
 
 
-function CountdownBadge({ expiresAt, status }) {
-  const secs = useCountdown(expiresAt, status === "waiting");
+// Resolve the best available expiry timestamp.
+// Priority: expiresAt from DB → purchasedAt + 15 min → null
+function resolveExpiry(expiresAt, purchasedAt) {
+  if (expiresAt) return expiresAt;
+  if (purchasedAt) {
+    return new Date(
+      new Date(purchasedAt).getTime() + 15 * 60 * 1000
+    ).toISOString();
+  }
+  return null;
+}
 
-  if (status !== "waiting" || secs === null || secs <= 0) {
+
+function CountdownBadge({ expiresAt, purchasedAt, status }) {
+  const resolved = resolveExpiry(expiresAt, purchasedAt);
+  // Show for any active order, not just "waiting"
+  const secs = useCountdown(resolved, isActive(status));
+
+  if (!isActive(status) || secs === null || secs <= 0) {
     return null;
   }
 
@@ -178,9 +193,11 @@ function CountdownBadge({ expiresAt, status }) {
 }
 
 
-function TimerBar({ expiresAt, status }) {
-  const active = isActive(status) && status === "waiting" && !!expiresAt;
-  const secs = useCountdown(expiresAt, active);
+function TimerBar({ expiresAt, purchasedAt, status }) {
+  const resolved = resolveExpiry(expiresAt, purchasedAt);
+  // Show for any active order — status "received" also has time remaining
+  const active = isActive(status) && !!resolved;
+  const secs = useCountdown(resolved, active);
 
   if (!active || secs === null || secs <= 0) return null;
 
@@ -667,7 +684,11 @@ export default function MyNumbers() {
                           Service: <span className="capitalize">{entry.service}</span>
                           {" · "}
                           {isActive(entry.status) ? (
-                            <CountdownBadge expiresAt={entry.expiresAt} status={entry.status} />
+                            <CountdownBadge
+                              expiresAt={entry.expiresAt}
+                              purchasedAt={entry.purchasedAt}
+                              status={entry.status}
+                            />
                           ) : (
                             <span>Expired</span>
                           )}
@@ -704,7 +725,11 @@ export default function MyNumbers() {
 
 
                   {/* TIMER BAR */}
-                  <TimerBar expiresAt={entry.expiresAt} status={entry.status} />
+                  <TimerBar
+                    expiresAt={entry.expiresAt}
+                    purchasedAt={entry.purchasedAt}
+                    status={entry.status}
+                  />
 
 
                   {/* SMS */}
