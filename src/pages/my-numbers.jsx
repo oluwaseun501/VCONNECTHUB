@@ -487,6 +487,7 @@ export default function MyNumbers() {
   }, []); // empty deps — stable interval
 
 
+  
   // ── AUTO-EXPIRE FRONTEND ORDERS ────────────────────────────
   useEffect(() => {
     const intervalId = setInterval(() => {
