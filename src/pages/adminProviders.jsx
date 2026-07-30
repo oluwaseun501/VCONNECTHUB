@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import AdminSidebar from "./adminSidebar";
 import AdminTopbar from "./adminTopbar";
-import { Plug2, Plus, Trash2, CheckCircle2, Pencil, X, Loader2, AlertCircle } from "lucide-react";
+import { Plug2, Plus, Trash2, CheckCircle2, Pencil, X, Loader2, AlertCircle, ToggleLeft, ToggleRight } from "lucide-react";
 import { getProviders, addProvider, updateProvider, activateProvider, deleteProvider } from "./adminApi";
 
 const EMPTY_FORM = { name: "", apiKey: "", baseUrl: "https://5sim.net/v1", markupPercent: 0, notes: "" };
@@ -15,7 +15,7 @@ export default function AdminProviders() {
   const [editing, setEditing]           = useState(null);
   const [form, setForm]                 = useState(EMPTY_FORM);
   const [saving, setSaving]             = useState(false);
-  const [activating, setActivating]     = useState(null);
+  const [toggling, setToggling]         = useState(null);
   const [deleting, setDeleting]         = useState(null);
 
   async function load() {
@@ -43,7 +43,7 @@ export default function AdminProviders() {
     setEditing(provider);
     setForm({
       name:          provider.name ?? "",
-      apiKey:        provider.apiKey ?? "", // will show masked value e.g. ••••••abc123
+      apiKey:        provider.apiKey ?? "",
       baseUrl:       provider.baseUrl ?? "",
       markupPercent: provider.markupPercent ?? 0,
       notes:         provider.notes ?? "",
@@ -69,7 +69,6 @@ export default function AdminProviders() {
           markupPercent: form.markupPercent,
           notes:         form.notes,
         };
-        // Only include apiKey if the user actually typed a new one (not the masked value)
         if (form.apiKey && !form.apiKey.includes("•")) {
           payload.apiKey = form.apiKey;
         }
@@ -86,16 +85,17 @@ export default function AdminProviders() {
     }
   }
 
-  async function handleActivate(id) {
-    setActivating(id);
+  // Toggle active state — allows multiple providers to be active at once
+  async function handleToggle(provider) {
+    setToggling(provider._id);
     setError("");
     try {
-      await activateProvider(id);
+      await activateProvider(provider._id);
       await load();
     } catch {
-      setError("Failed to activate provider.");
+      setError("Failed to update provider.");
     } finally {
-      setActivating(null);
+      setToggling(null);
     }
   }
 
@@ -113,6 +113,8 @@ export default function AdminProviders() {
     }
   }
 
+  const activeCount = providers.filter(p => p.isActive).length;
+
   return (
     <div className="min-h-screen bg-background flex">
       <AdminSidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
@@ -126,7 +128,14 @@ export default function AdminProviders() {
             <div>
               <h1 className="text-2xl font-bold text-foreground">API Providers</h1>
               <p className="text-sm text-muted-foreground mt-0.5">
-                Manage virtual number providers. Only one can be active at a time.
+                Manage virtual number providers.{" "}
+                {activeCount > 0 ? (
+                  <span className="text-emerald-400 font-medium">
+                    {activeCount} active — fallback enabled automatically.
+                  </span>
+                ) : (
+                  <span className="text-amber-400">No providers active.</span>
+                )}
               </p>
             </div>
             <button
@@ -137,6 +146,13 @@ export default function AdminProviders() {
               Add Provider
             </button>
           </div>
+
+          {activeCount >= 2 && (
+            <div className="flex items-center gap-2 px-4 py-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-sm">
+              <CheckCircle2 className="w-4 h-4 flex-shrink-0" />
+              Multi-provider fallback is active — when one provider has no stock, purchases automatically try the next one.
+            </div>
+          )}
 
           {error && (
             <div className="flex items-center gap-2 px-4 py-3 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-sm">
@@ -171,14 +187,16 @@ export default function AdminProviders() {
                 <div
                   key={p._id}
                   className={`glass-card rounded-2xl p-5 space-y-4 border-2 transition-colors ${
-                    p.isActive ? "border-violet-500/40" : "border-transparent"
+                    p.isActive ? "border-violet-500/40" : "border-transparent opacity-70"
                   }`}
                 >
                   {/* Top row */}
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex items-center gap-3 min-w-0">
-                      <div className="w-10 h-10 rounded-xl bg-violet-500/10 flex items-center justify-center flex-shrink-0">
-                        <Plug2 className="w-5 h-5 text-violet-400" />
+                      <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${
+                        p.isActive ? "bg-violet-500/10" : "bg-muted"
+                      }`}>
+                        <Plug2 className={`w-5 h-5 ${p.isActive ? "text-violet-400" : "text-muted-foreground"}`} />
                       </div>
                       <div className="min-w-0">
                         <p className="font-semibold text-foreground truncate">{p.name}</p>
@@ -187,10 +205,14 @@ export default function AdminProviders() {
                         )}
                       </div>
                     </div>
-                    {p.isActive && (
+                    {p.isActive ? (
                       <span className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[11px] font-bold uppercase tracking-wide flex-shrink-0">
                         <CheckCircle2 className="w-3 h-3" />
                         Active
+                      </span>
+                    ) : (
+                      <span className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-muted border border-border text-muted-foreground text-[11px] font-bold uppercase tracking-wide flex-shrink-0">
+                        Off
                       </span>
                     )}
                   </div>
@@ -210,18 +232,26 @@ export default function AdminProviders() {
 
                   {/* Actions */}
                   <div className="flex items-center gap-2 pt-1">
-                    {!p.isActive && (
-                      <button
-                        onClick={() => handleActivate(p._id)}
-                        disabled={activating === p._id}
-                        className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg bg-violet-500/10 hover:bg-violet-500/20 text-violet-400 text-xs font-medium transition-colors disabled:opacity-50"
-                      >
-                        {activating === p._id
-                          ? <Loader2 className="w-3 h-3 animate-spin" />
-                          : <CheckCircle2 className="w-3 h-3" />}
-                        Set Active
-                      </button>
-                    )}
+                    {/* Toggle active/inactive */}
+                    <button
+                      onClick={() => handleToggle(p)}
+                      disabled={toggling === p._id}
+                      className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-medium transition-colors disabled:opacity-50 ${
+                        p.isActive
+                          ? "bg-emerald-500/10 hover:bg-red-500/10 text-emerald-400 hover:text-red-400"
+                          : "bg-violet-500/10 hover:bg-violet-500/20 text-violet-400"
+                      }`}
+                    >
+                      {toggling === p._id ? (
+                        <Loader2 className="w-3 h-3 animate-spin" />
+                      ) : p.isActive ? (
+                        <ToggleRight className="w-3.5 h-3.5" />
+                      ) : (
+                        <ToggleLeft className="w-3.5 h-3.5" />
+                      )}
+                      {p.isActive ? "Disable" : "Enable"}
+                    </button>
+
                     <button
                       onClick={() => openEdit(p)}
                       className="flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg bg-muted hover:bg-muted/80 text-muted-foreground hover:text-foreground text-xs font-medium transition-colors"

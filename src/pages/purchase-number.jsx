@@ -41,8 +41,8 @@ const POPULAR_SERVICE_IDS = ["whatsapp", "telegram", "facebook", "instagram", "t
 
 const sortPopular = (list, ids) =>
   [...list].sort((a, b) => {
-    const ai = ids.indexOf(a.id?.toLowerCase());
-    const bi = ids.indexOf(b.id?.toLowerCase());
+    const ai = ids.indexOf((a.serviceId || a.id)?.toLowerCase());
+    const bi = ids.indexOf((b.serviceId || b.id)?.toLowerCase());
     if (ai === -1 && bi === -1) return 0;
     if (ai === -1) return 1;
     if (bi === -1) return -1;
@@ -68,9 +68,18 @@ function titleCase(str) {
   return str.replace(/[_-]/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
 }
 
-/* ── Service Card (shared between grid and selected view) ── */
-function ServiceCard({ service, selected, onClick, showCheck = true }) {
+/* ── Provider badge colours ── */
+const PROVIDER_COLORS = [
+  { bg: "bg-violet-500/10", text: "text-violet-400", border: "border-violet-500/30" },
+  { bg: "bg-blue-500/10",   text: "text-blue-400",   border: "border-blue-500/30"   },
+  { bg: "bg-amber-500/10",  text: "text-amber-400",  border: "border-amber-500/30"  },
+  { bg: "bg-emerald-500/10",text: "text-emerald-400",border: "border-emerald-500/30"},
+];
+
+/* ── Service Card ── */
+function ServiceCard({ service, selected, onClick, showCheck = true, providerIndex = 0 }) {
   const Icon = service.icon;
+  const pc = PROVIDER_COLORS[providerIndex % PROVIDER_COLORS.length];
   return (
     <button
       onClick={onClick}
@@ -90,7 +99,15 @@ function ServiceCard({ service, selected, onClick, showCheck = true }) {
         }
       </div>
       <div className="flex-1 min-w-0">
-        <p className="text-sm font-semibold text-foreground truncate">{service.name}</p>
+        <div className="flex items-center gap-2 flex-wrap">
+          <p className="text-sm font-semibold text-foreground truncate">{service.name}</p>
+          {/* ── CHANGED: show "Provider 1", "Provider 2" instead of provider name ── */}
+          {service.providerName && (
+            <span className={`text-[10px] px-1.5 py-0.5 rounded border font-medium ${pc.bg} ${pc.text} ${pc.border}`}>
+              Provider {providerIndex + 1}
+            </span>
+          )}
+        </div>
         <p className="text-xs font-bold text-violet-600 dark:text-violet-400">₦{Number(service.price).toLocaleString()}</p>
       </div>
       {selected && showCheck && <div className="w-2.5 h-2.5 rounded-full bg-violet-500 flex-shrink-0" />}
@@ -159,6 +176,9 @@ export default function PurchaseNumber() {
   const [balanceLoading, setBalanceLoading] = useState(true);
   const [balanceError, setBalanceError] = useState(false);
 
+  /* ── Active providers ── */
+  const [activeProviders, setActiveProviders] = useState([]);
+
   /* ── Countries ── */
   const [countries, setCountries]               = useState([]);
   const [countriesLoading, setCountriesLoading] = useState(true);
@@ -173,7 +193,6 @@ export default function PurchaseNumber() {
   const [servicesError, setServicesError]     = useState("");
   const [serviceSearch, setServiceSearch]     = useState("");
   const [selectedService, setSelectedService] = useState(null);
-  // Controls whether the full service list is shown or collapsed to just the selection
   const [serviceListOpen, setServiceListOpen] = useState(true);
 
   /* ── Steps ── */
@@ -220,46 +239,97 @@ export default function PurchaseNumber() {
     })();
   }, []);
 
-  /* ── Countries ── */
+  /* ── Load providers + countries on mount ── */
   useEffect(() => {
     (async () => {
       try {
-        const { data } = await api.get("/api/numbers/countries");
-        const list = Object.entries(data).map(([key, val]) => ({
-          id: key, name: val.text || titleCase(key), iso: val.iso || "", flag: isoToFlag(val.iso),
-        }));
-        const sorted = sortPopular(list, POPULAR_COUNTRY_IDS);
-        setCountries(sorted);
-        if (sorted.length > 0) setSelectedCountry(sorted[0]);
-      } catch { setCountriesError("Could not load countries. Please refresh."); }
-      finally  { setCountriesLoading(false); }
+        const [providersRes, countriesRes] = await Promise.allSettled([
+          api.get("/api/numbers/providers"),
+          api.get("/api/numbers/countries"),
+        ]);
+
+        if (providersRes.status === "fulfilled") {
+          const active = (providersRes.value.data ?? []).filter(p => p.isActive);
+          setActiveProviders(active);
+        }
+
+        if (countriesRes.status === "fulfilled") {
+          const data = countriesRes.value.data;
+          const list = Object.entries(data).map(([key, val]) => ({
+            id: key, name: val.text || titleCase(key), iso: val.iso || "", flag: isoToFlag(val.iso),
+          }));
+          const sorted = sortPopular(list, POPULAR_COUNTRY_IDS);
+          setCountries(sorted);
+          if (sorted.length > 0) setSelectedCountry(sorted[0]);
+        } else {
+          setCountriesError("Could not load countries. Please refresh.");
+        }
+      } catch {
+        setCountriesError("Could not load countries. Please refresh.");
+      } finally {
+        setCountriesLoading(false);
+      }
     })();
   }, []);
 
-  /* ── Services when country changes ── */
+  /* ── Services when country OR providers change ── */
   useEffect(() => {
     if (!selectedCountry) return;
     setServicesLoading(true);
     setServicesError("");
     setSelectedService(null);
-    setServiceListOpen(true); // reset: show full list when country changes
+    setServiceListOpen(true);
     setServices([]);
+
     (async () => {
       try {
-        const { data } = await api.get(`/api/numbers/products/${selectedCountry.id}/any`);
+        const providerList = activeProviders.length > 0 ? activeProviders : [null];
+
+        const results = await Promise.allSettled(
+          providerList.map((provider) => {
+            const url = provider
+              ? `/api/numbers/products/${selectedCountry.id}/any?provider=${provider._id}`
+              : `/api/numbers/products/${selectedCountry.id}/any`;
+            return api.get(url).then(res => ({ provider, data: res.data }));
+          })
+        );
+
         const getPrice = (op) => op?.Price ?? op?.price ?? op?.cost ?? 0;
-        const list = Object.entries(data)
-          .filter(([, val]) => val && typeof val === "object" && Object.keys(val).length > 0)
-          .map(([key, val]) => {
-            const op   = val["any"] || Object.values(val)[0] || {};
-            const meta = SERVICE_META[key.toLowerCase()] || {};
-            return { id: key, name: titleCase(key), icon: meta.icon || null, color: meta.color || "#7c3aed", price: getPrice(op) };
-          });
+        const list = [];
+
+        results.forEach((result, idx) => {
+          if (result.status !== "fulfilled") return;
+          const { provider, data } = result.value;
+          const providerIndex = idx;
+
+          Object.entries(data)
+            .filter(([, val]) => val && typeof val === "object" && Object.keys(val).length > 0)
+            .forEach(([key, val]) => {
+              const op    = val["any"] || Object.values(val)[0] || {};
+              const meta  = SERVICE_META[key.toLowerCase()] || {};
+              const price = getPrice(op);
+              list.push({
+                id:            provider ? `${key}__${provider._id}` : key,
+                serviceId:     key,
+                name:          titleCase(key),
+                icon:          meta.icon || null,
+                color:         meta.color || "#7c3aed",
+                price,
+                providerId:    provider?._id || null,
+                providerName:  provider?.name || null,
+                providerIndex,
+              });
+            });
+        });
+
         setServices(sortPopular(list, POPULAR_SERVICE_IDS));
-      } catch { setServicesError("Could not load services for this country."); }
-      finally  { setServicesLoading(false); }
+      } catch {
+        setServicesError("Could not load services for this country.");
+      } finally {
+        setServicesLoading(false);
+      }
     })();
-  }, [selectedCountry]);
+  }, [selectedCountry, activeProviders]);
 
   /* ── Polling ── */
   const stopPolling = useCallback(() => {
@@ -274,26 +344,34 @@ export default function PurchaseNumber() {
         setSmsStatus(data.status);
         if (data.sms?.length > 0) setSmsMessages(data.sms);
         if (["RECEIVED", "CANCELED", "FINISHED"].includes(data.status)) stopPolling();
-      } catch { /* 401 handled globally; keep polling on other errors */ }
+      } catch { /* keep polling on errors */ }
     }, 5000);
   }, [stopPolling]);
 
   /* ── Handlers ── */
   const handleBuyClick = () => { if (!selectedService || !selectedCountry) return; setPinError(""); setShowPinModal(true); };
 
-  // When user picks a service, select it and collapse the list
   const handleSelectService = (service) => {
     setSelectedService(service);
-    setServiceListOpen(false); // collapse list — user can scroll straight to Purchase
+    setServiceListOpen(false);
     setServiceSearch("");
   };
 
   const handlePinConfirm = async (pin) => {
     setBuying(true); setPinError("");
     try {
+      const body = {
+        country:  selectedCountry.id,
+        product:  selectedService.serviceId,
+        operator: "any",
+      };
+      if (selectedService.providerId) {
+        body.provider = selectedService.providerId;
+      }
+
       const { data } = await api.post(
         "/api/numbers/buy",
-        { country: selectedCountry.id, product: selectedService.id, operator: "any" },
+        body,
         { headers: { "x-transaction-pin": pin } }
       );
       const newOrder = data.order;
@@ -354,8 +432,8 @@ export default function PurchaseNumber() {
   const popularCountries  = countries.filter((c) => POPULAR_COUNTRY_IDS.includes(c.id));
 
   const filteredServices  = services.filter((s) => s.name.toLowerCase().includes(serviceSearch.toLowerCase()));
-  const popularServices   = filteredServices.filter((s) => POPULAR_SERVICE_IDS.includes(s.id.toLowerCase()));
-  const otherServices     = filteredServices.filter((s) => !POPULAR_SERVICE_IDS.includes(s.id.toLowerCase()));
+  const popularServices   = filteredServices.filter((s) => POPULAR_SERVICE_IDS.includes(s.serviceId?.toLowerCase() || s.id?.toLowerCase()));
+  const otherServices     = filteredServices.filter((s) => !POPULAR_SERVICE_IDS.includes(s.serviceId?.toLowerCase() || s.id?.toLowerCase()));
 
   const statusConfig = {
     PENDING:  { label: "Waiting for SMS…", color: "text-amber-500",   dot: "bg-amber-500",   animate: true  },
@@ -432,7 +510,6 @@ export default function PurchaseNumber() {
                     <h2 className="font-semibold text-foreground">Select Country</h2>
                   </div>
 
-                  {/* Popular country quick-picks */}
                   {!countriesLoading && !countriesError && popularCountries.length > 0 && (
                     <div className="mb-4">
                       <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Popular</p>
@@ -455,7 +532,6 @@ export default function PurchaseNumber() {
                     </div>
                   )}
 
-                  {/* Full country dropdown */}
                   {countriesError ? (
                     <p className="text-sm text-red-500 flex items-center gap-1.5"><AlertCircle className="w-4 h-4" /> {countriesError}</p>
                   ) : countriesLoading ? (
@@ -512,8 +588,11 @@ export default function PurchaseNumber() {
                       <span className="w-6 h-6 rounded-full bg-violet-500 text-white text-xs font-bold flex items-center justify-center">2</span>
                       <h2 className="font-semibold text-foreground">Select Service</h2>
                     </div>
-
-                    {/* "Change" button — only visible when a service is selected and list is collapsed */}
+                    {activeProviders.length > 1 && (
+                      <p className="text-xs text-muted-foreground">
+                        Showing prices from {activeProviders.length} providers — pick the best deal
+                      </p>
+                    )}
                     {selectedService && !serviceListOpen && (
                       <button
                         onClick={() => setServiceListOpen(true)}
@@ -539,6 +618,7 @@ export default function PurchaseNumber() {
                           selected={true}
                           onClick={() => setServiceListOpen(true)}
                           showCheck={true}
+                          providerIndex={selectedService.providerIndex || 0}
                         />
                         <p className="text-xs text-muted-foreground text-center mt-2">
                           Tap <span className="text-violet-500 font-medium">Change</span> above to pick a different service
@@ -586,6 +666,7 @@ export default function PurchaseNumber() {
                                       service={service}
                                       selected={selectedService?.id === service.id}
                                       onClick={() => handleSelectService(service)}
+                                      providerIndex={service.providerIndex || 0}
                                     />
                                   ))}
                                 </div>
@@ -605,6 +686,7 @@ export default function PurchaseNumber() {
                                       service={service}
                                       selected={selectedService?.id === service.id}
                                       onClick={() => handleSelectService(service)}
+                                      providerIndex={service.providerIndex || 0}
                                     />
                                   ))}
                                 </div>
@@ -633,6 +715,15 @@ export default function PurchaseNumber() {
                       <span className="text-muted-foreground">Service</span>
                       <span className="font-medium text-foreground">{selectedService?.name || "—"}</span>
                     </div>
+                    {/* ── CHANGED: show "Provider N" instead of provider name ── */}
+                    {selectedService?.providerName && (
+                      <div className="flex justify-between py-2 border-b border-border">
+                        <span className="text-muted-foreground">Provider</span>
+                        <span className="font-medium text-foreground">
+                          Provider {(selectedService.providerIndex || 0) + 1}
+                        </span>
+                      </div>
+                    )}
                     <div className="flex justify-between py-2">
                       <span className="text-muted-foreground">Price</span>
                       <span className="font-bold text-violet-600 dark:text-violet-400">
@@ -680,7 +771,13 @@ export default function PurchaseNumber() {
 
                 {/* Phone number */}
                 <div className="p-5 rounded-2xl bg-gradient-to-br from-violet-600/10 to-fuchsia-500/10 border border-violet-500/20 space-y-2">
-                  <p className="text-xs text-muted-foreground">{selectedCountry?.flag} {selectedService?.name} · {selectedCountry?.name}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {selectedCountry?.flag} {selectedService?.name} · {selectedCountry?.name}
+                    {/* ── CHANGED: show "Provider N" instead of provider name ── */}
+                    {selectedService?.providerName && (
+                      <span className="ml-1">· Provider {(selectedService.providerIndex || 0) + 1}</span>
+                    )}
+                  </p>
                   <p className="text-3xl font-bold text-foreground tracking-wide">{order.phone}</p>
                   <button onClick={handleCopyNumber} className="flex items-center gap-1.5 mx-auto text-xs text-violet-500 hover:text-violet-400 transition-colors">
                     {copied ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
@@ -706,7 +803,6 @@ export default function PurchaseNumber() {
                   </div>
                 )}
 
-                {/* Redirect notice */}
                 {!["CANCELED", "FINISHED"].includes(smsStatus) && (
                   <p className="text-xs text-muted-foreground">
                     Redirecting to <span className="font-semibold text-foreground">My Numbers</span> in{" "}
@@ -714,7 +810,6 @@ export default function PurchaseNumber() {
                   </p>
                 )}
 
-                {/* Cancelled notice */}
                 {smsStatus === "CANCELED" && (
                   <div className="flex items-center gap-2 p-3 rounded-xl bg-red-500/10 border border-red-500/20">
                     <XCircle className="w-4 h-4 text-red-500 flex-shrink-0" />
@@ -722,7 +817,6 @@ export default function PurchaseNumber() {
                   </div>
                 )}
 
-                {/* Action buttons */}
                 <div className="flex gap-3">
                   <button onClick={handleBuyAnother}
                     className="flex-1 h-11 rounded-xl border border-border text-foreground text-sm hover:bg-muted transition-all"
