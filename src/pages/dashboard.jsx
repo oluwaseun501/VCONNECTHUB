@@ -44,7 +44,7 @@ const SERVICE_META = {
 };
 
 /* ── Popular items pinned to top ── */
-const POPULAR_COUNTRY_IDS = ["usa", "england", "germany", "canada", "nigeria"];
+const POPULAR_COUNTRY_IDS = ["usa","usa (2)", "england", "germany", "canada"];
 const POPULAR_SERVICE_IDS = [
   "whatsapp",
   "telegram",
@@ -167,40 +167,91 @@ export default function Dashboard() {
     };
   }, [step, setLocation]);
 
-  /* ── Fetch providers + countries on mount ── */
-  useEffect(() => {
-    (async () => {
-      try {
-        const [providersRes, countriesRes] = await Promise.allSettled([
-          api.get("/api/numbers/providers"), // ← FIXED: was /api/providers
-          api.get("/api/numbers/countries"),
-        ]);
+/* ── Fetch providers + countries on mount ── */
+useEffect(() => {
+  let cancelled = false;
 
-        if (providersRes.status === "fulfilled") {
-          setActiveProviders(
-            (providersRes.value.data ?? []).filter((p) => p.isActive),
-          );
-        }
+  const loadProvidersAndCountries = async () => {
+    setCountriesLoading(true);
+    setCountriesError("");
 
-        if (countriesRes.status === "fulfilled") {
-          const data = countriesRes.value.data;
-          const list = Object.entries(data).map(([key, val]) => ({
-            id: key,
-            name: val.text || titleCase(key),
-            iso: val.iso || "",
-            flag: flagUrl(val.iso),
-          }));
-          setCountries(sortPopular(list, POPULAR_COUNTRY_IDS));
-        } else {
-          setCountriesError("Could not load countries.");
-        }
-      } catch {
+    try {
+      const providersResponse = await api.get("/api/numbers/providers");
+
+      const providers = (providersResponse.data ?? []).filter(
+        (provider) => provider.isActive,
+      );
+
+      if (cancelled) return;
+
+      setActiveProviders(providers);
+
+      // Ask each active provider for its own country list.
+      // This is important because some countries may exist only
+      // on one provider, such as Laomao's USA (2).
+      const providerList = providers.length > 0 ? providers : [null];
+
+      const countryResults = await Promise.allSettled(
+        providerList.map((provider) => {
+          const url = provider
+            ? `/api/numbers/countries?provider=${encodeURIComponent(
+                provider._id,
+              )}`
+            : "/api/numbers/countries";
+
+          return api.get(url).then((response) => response.data);
+        }),
+      );
+
+      const countryMap = new Map();
+
+      countryResults.forEach((result) => {
+        if (result.status !== "fulfilled") return;
+
+        const data = result.value;
+
+        Object.entries(data ?? {}).forEach(([key, value]) => {
+          if (!value || typeof value !== "object") return;
+
+          const id = String(key).toLowerCase();
+
+          if (!countryMap.has(id)) {
+            countryMap.set(id, {
+              id,
+              name: value.text || value.name || titleCase(key),
+              iso: value.iso || "",
+              flag: flagUrl(value.iso),
+            });
+          }
+        });
+      });
+
+      const list = Array.from(countryMap.values());
+
+      if (cancelled) return;
+
+      if (list.length === 0) {
         setCountriesError("Could not load countries.");
-      } finally {
+      } else {
+        setCountries(sortPopular(list, POPULAR_COUNTRY_IDS));
+      }
+    } catch (error) {
+      if (!cancelled) {
+        setCountriesError("Could not load countries.");
+      }
+    } finally {
+      if (!cancelled) {
         setCountriesLoading(false);
       }
-    })();
-  }, []);
+    }
+  };
+
+  loadProvidersAndCountries();
+
+  return () => {
+    cancelled = true;
+  };
+}, []);
 
   /* ── Fetch services when country OR providers change ── */
   useEffect(() => {
@@ -250,7 +301,6 @@ export default function Dashboard() {
                 color: meta.color || "#7c3aed",
                 price: getPrice(op),
                 providerId: provider?._id || null,
-                providerName: provider?.name || null,
                 providerIndex,
               });
             });
@@ -752,13 +802,13 @@ export default function Dashboard() {
                                     <div className="font-medium text-sm">
                                       {service.name}
                                     </div>
-                                    {service.providerName && (
-                                      <div
-                                        className={`text-[10px] px-1.5 py-0.5 mt-1 rounded border font-medium ${pc.bg} ${pc.text} ${pc.border}`}
-                                      >
-                                        {service.providerName}
-                                      </div>
-                                    )}
+                                   {service.providerId && (
+  <div
+    className={`text-[10px] px-1.5 py-0.5 mt-1 rounded border font-medium ${pc.bg} ${pc.text} ${pc.border}`}
+  >
+    Provider {(service.providerIndex ?? 0) + 1}
+  </div>
+)}
                                     <div className="text-primary font-bold mt-1 text-xs">
                                       ₦{Number(service.price).toLocaleString()}
                                     </div>
@@ -817,13 +867,13 @@ export default function Dashboard() {
                                     <div className="font-medium text-sm">
                                       {service.name}
                                     </div>
-                                    {service.providerName && (
-                                      <div
-                                        className={`text-[10px] px-1.5 py-0.5 mt-1 rounded border font-medium ${pc.bg} ${pc.text} ${pc.border}`}
-                                      >
-                                        {service.providerName}
-                                      </div>
-                                    )}
+                                  {service.providerId && (
+  <div
+    className={`text-[10px] px-1.5 py-0.5 mt-1 rounded border font-medium ${pc.bg} ${pc.text} ${pc.border}`}
+  >
+    Provider {(service.providerIndex ?? 0) + 1}
+  </div>
+)}
                                     <div className="text-primary font-bold mt-1 text-xs">
                                       ₦{Number(service.price).toLocaleString()}
                                     </div>
@@ -886,16 +936,14 @@ export default function Dashboard() {
                         </div>
                       </div>
                       {/* Show provider when user made an explicit provider choice */}
-                      {selectedService?.providerName && (
-                        <div className="flex justify-between items-center mb-3">
-                          <div className="text-sm text-muted-foreground">
-                            Provider
-                          </div>
-                          <div className="font-medium text-sm">
-                            {selectedService.providerName}
-                          </div>
-                        </div>
-                      )}
+                       {selectedService?.providerId && (
+                      <div className="flex justify-between py-2 border-b border-border">
+                        <span className="text-muted-foreground">Provider</span>
+                        <span className="font-medium text-foreground">
+                          Provider {(selectedService.providerIndex || 0) + 1}
+                        </span>
+                      </div>
+                    )}
                       <div className="flex justify-between items-center pt-3 border-t border-border mt-3">
                         <div className="text-sm font-medium">Total Cost</div>
                         <div className="text-xl font-bold text-primary">

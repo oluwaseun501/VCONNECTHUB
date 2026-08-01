@@ -36,7 +36,7 @@ const SERVICE_META = {
 };
 
 /* ── Popular items pinned to top ── */
-const POPULAR_COUNTRY_IDS = ["usa", "england", "germany", "canada", "nigeria"];
+const POPULAR_COUNTRY_IDS = ["usa", ,"usa (2)", "england", "germany", "canada"];
 const POPULAR_SERVICE_IDS = ["whatsapp", "telegram", "facebook", "instagram", "tiktok", "twitter", "gmail", "snapchat"];
 
 const sortPopular = (list, ids) =>
@@ -238,39 +238,97 @@ export default function PurchaseNumber() {
       finally  { setBalanceLoading(false); }
     })();
   }, []);
+/* ── Load providers + countries on mount ── */
+useEffect(() => {
+  let cancelled = false;
 
-  /* ── Load providers + countries on mount ── */
-  useEffect(() => {
-    (async () => {
-      try {
-        const [providersRes, countriesRes] = await Promise.allSettled([
-          api.get("/api/numbers/providers"),
-          api.get("/api/numbers/countries"),
-        ]);
+  const loadProvidersAndCountries = async () => {
+    setCountriesLoading(true);
+    setCountriesError("");
 
-        if (providersRes.status === "fulfilled") {
-          const active = (providersRes.value.data ?? []).filter(p => p.isActive);
-          setActiveProviders(active);
-        }
+    try {
+      const providersResponse = await api.get("/api/numbers/providers");
 
-        if (countriesRes.status === "fulfilled") {
-          const data = countriesRes.value.data;
-          const list = Object.entries(data).map(([key, val]) => ({
-            id: key, name: val.text || titleCase(key), iso: val.iso || "", flag: isoToFlag(val.iso),
-          }));
-          const sorted = sortPopular(list, POPULAR_COUNTRY_IDS);
-          setCountries(sorted);
-          if (sorted.length > 0) setSelectedCountry(sorted[0]);
-        } else {
-          setCountriesError("Could not load countries. Please refresh.");
-        }
-      } catch {
+      const active = (providersResponse.data ?? []).filter(
+        (provider) => provider.isActive,
+      );
+
+      if (cancelled) return;
+
+      setActiveProviders(active);
+
+      // Load countries from every active provider.
+      // This allows provider-specific countries such as Laomao's USA (2)
+      // to appear in the country selector.
+      const providerList = active.length > 0 ? active : [null];
+
+      const countryResults = await Promise.allSettled(
+        providerList.map((provider) => {
+          const url = provider
+            ? `/api/numbers/countries?provider=${encodeURIComponent(
+                provider._id,
+              )}`
+            : "/api/numbers/countries";
+
+          return api.get(url).then((response) => response.data);
+        }),
+      );
+
+      const countryMap = new Map();
+
+      countryResults.forEach((result) => {
+        if (result.status !== "fulfilled") return;
+
+        const data = result.value;
+
+        Object.entries(data ?? {}).forEach(([key, value]) => {
+          if (!value || typeof value !== "object") return;
+
+          const id = String(key).toLowerCase();
+
+          if (!countryMap.has(id)) {
+            countryMap.set(id, {
+              id,
+              name: value.text || value.name || titleCase(key),
+              iso: value.iso || "",
+              flag: isoToFlag(value.iso),
+            });
+          }
+        });
+      });
+
+      const sorted = sortPopular(
+        Array.from(countryMap.values()),
+        POPULAR_COUNTRY_IDS,
+      );
+
+      if (cancelled) return;
+
+      if (sorted.length === 0) {
         setCountriesError("Could not load countries. Please refresh.");
-      } finally {
+      } else {
+        setCountries(sorted);
+
+        // Keep the existing behavior of selecting the first country.
+        setSelectedCountry(sorted[0]);
+      }
+    } catch {
+      if (!cancelled) {
+        setCountriesError("Could not load countries. Please refresh.");
+      }
+    } finally {
+      if (!cancelled) {
         setCountriesLoading(false);
       }
-    })();
-  }, []);
+    }
+  };
+
+  loadProvidersAndCountries();
+
+  return () => {
+    cancelled = true;
+  };
+}, []);
 
   /* ── Services when country OR providers change ── */
   useEffect(() => {

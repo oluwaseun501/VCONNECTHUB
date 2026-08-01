@@ -123,7 +123,13 @@ export default function AdminPricing() {
           const { data } = servicesRes.value;
           const list = Object.entries(data).map(([key, val]) => {
             const op  = val["any"] || Object.values(val)[0] || {};
-            const raw = op?.Price ?? op?.price ?? op?.cost ?? 0;
+            const raw =
+  op?.BasePrice ??
+  op?.basePrice ??
+  op?.Price ??
+  op?.price ??
+  op?.cost ??
+  0;
             return {
               id:        key,
               name:      key.charAt(0).toUpperCase() + key.slice(1),
@@ -137,30 +143,56 @@ export default function AdminPricing() {
     })();
   }, [selectedCountry, selectedProvider]);
 
-  function openModal(service) {
-    const existing = overrides.find(
-      o =>
-        o.service === service.id.toLowerCase() &&
-        o.country === selectedCountry?.id.toLowerCase() &&
-        (o.provider === selectedProvider?._id || !o.provider)
-    );
-    setModalService(service);
-    setCustomPrice(existing ? String(existing.price) : String(service.basePrice));
-    setShowModal(true);
+function isOverrideForProvider(override, providerId) {
+  if (!override?.provider || !providerId) {
+    return false;
   }
 
+  const overrideProviderId =
+    typeof override.provider === "object"
+      ? override.provider._id || override.provider.id
+      : override.provider;
+
+  return String(overrideProviderId) === String(providerId);
+}
+function openModal(service) {
+  const existing = overrides.find(
+    (override) =>
+      override.service === service.id.toLowerCase() &&
+      override.country === selectedCountry?.id.toLowerCase() &&
+      isOverrideForProvider(override, selectedProvider?._id),
+  );
+
+  setModalService(service);
+  setCustomPrice(
+    existing ? String(existing.price) : String(service.basePrice),
+  );
+  setShowModal(true);
+}
   async function handleSave(e) {
     e.preventDefault();
-    if (!modalService || !selectedCountry) return;
+    if (!modalService || !selectedCountry || !selectedProvider) {
+  setError("Please select a provider, country and service.");
+  return;
+}
+
+const numericPrice = Number(customPrice);
+
+if (!Number.isFinite(numericPrice) || numericPrice < 0) {
+  setError("Please enter a valid non-negative price.");
+  return;
+}
     setSaving(true);
     setError("");
     try {
-      await upsertPriceOverride({
-        service:  modalService.id,
-        country:  selectedCountry.id,
-        price:    parseFloat(customPrice),
-        provider: selectedProvider?._id,
-      });
+   // AFTER
+await upsertPriceOverride({
+  service:   modalService.id,
+  country:   selectedCountry.id,
+  price:     numericPrice,
+  provider:  selectedProvider._id,
+  basePrice: modalService.basePrice,   // ← NEW
+});
       await loadOverrides();
       setShowModal(false);
     } catch { setError("Failed to save override."); }
@@ -212,14 +244,14 @@ export default function AdminPricing() {
     s.name.toLowerCase().includes(serviceSearch.toLowerCase())
   );
 
-  function getOverride(serviceId) {
-    return overrides.find(
-      o =>
-        o.service === serviceId.toLowerCase() &&
-        o.country === selectedCountry?.id.toLowerCase() &&
-        (o.provider === selectedProvider?._id || !o.provider)
-    );
-  }
+function getOverride(serviceId) {
+  return overrides.find(
+    (override) =>
+      override.service === serviceId.toLowerCase() &&
+      override.country === selectedCountry?.id.toLowerCase() &&
+      isOverrideForProvider(override, selectedProvider?._id),
+  );
+}
 
   function isDisabled(service) {
     if (!selectedCountry || !selectedProvider) return false;
@@ -430,34 +462,55 @@ export default function AdminPricing() {
                 <p className="text-sm text-muted-foreground py-4 text-center">No overrides yet</p>
               ) : (
                 <div className="space-y-1.5 max-h-[420px] overflow-y-auto">
-                  {overrides.map(o => {
-                    const provIdx = providers.findIndex(p => p._id === o.provider);
-                    const prov    = providers[provIdx];
-                    return (
-                      <div key={o._id} className="flex items-center justify-between px-3 py-2.5 rounded-xl bg-muted/40">
-                        <div className="min-w-0">
-                          <p className="text-sm font-medium text-foreground capitalize truncate">
-                            {o.service} — {o.country.toUpperCase()}
-                          </p>
-                          <div className="flex items-center gap-2 mt-0.5">
-                            <p className="text-xs text-violet-400 font-semibold">₦{Number(o.price).toLocaleString()}</p>
-                            {prov && (
-                              <span className={`text-[10px] px-1.5 py-0.5 rounded border font-medium ${providerColor(provIdx)}`}>
-                                {prov.name}
-                              </span>
-                            )}
-                          </div>
-                        </div>
-                        <button
-                          onClick={() => handleDelete(o._id)}
-                          disabled={deleting === o._id}
-                          className="p-1.5 rounded-lg text-red-400 hover:bg-red-500/10 transition-colors disabled:opacity-50 flex-shrink-0"
-                        >
-                          {deleting === o._id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Trash2 className="w-3.5 h-3.5" />}
-                        </button>
-                      </div>
-                    );
-                  })}
+      {overrides.map(o => {
+  const provIdx = providers.findIndex(p => {
+    const pid = typeof p._id === "object" ? String(p._id) : p._id;
+    const oid = typeof o.provider === "object" ? String(o.provider._id || o.provider) : String(o.provider);
+    return pid === oid;
+  });
+  const prov = providers[provIdx];
+
+  // ← NEW: fall back to live services state for current country view
+  let displayBasePrice = o.basePrice;
+  if ((!displayBasePrice || displayBasePrice === 0) &&
+      o.country === selectedCountry?.id?.toLowerCase() &&
+      isOverrideForProvider(o, selectedProvider?._id)) {
+    const svc = services.find(s => s.id.toLowerCase() === o.service.toLowerCase());
+    if (svc?.basePrice) displayBasePrice = svc.basePrice;
+  }
+
+  return (
+    <div key={o._id} className="flex items-center justify-between px-3 py-2.5 rounded-xl bg-muted/40">
+      <div className="min-w-0">
+        <p className="text-sm font-medium text-foreground capitalize truncate">
+          {o.service} — {o.country.toUpperCase()}
+        </p>
+        <div className="flex items-center gap-2 mt-0.5 flex-wrap">
+          {displayBasePrice != null && displayBasePrice > 0 && (
+            <p className="text-xs text-muted-foreground">
+              Base: ₦{Number(displayBasePrice).toLocaleString()}
+            </p>
+          )}
+          <p className="text-xs text-violet-400 font-semibold">
+            → ₦{Number(o.price).toLocaleString()}
+          </p>
+          {prov && (
+            <span className={`text-[10px] px-1.5 py-0.5 rounded border font-medium ${providerColor(provIdx)}`}>
+              {prov.name}
+            </span>
+          )}
+        </div>
+      </div>
+      <button
+        onClick={() => handleDelete(o._id)}
+        disabled={deleting === o._id}
+        className="p-1.5 rounded-lg text-red-400 hover:bg-red-500/10 transition-colors disabled:opacity-50 flex-shrink-0"
+      >
+        {deleting === o._id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Trash2 className="w-3.5 h-3.5" />}
+      </button>
+    </div>
+  );
+})}
                 </div>
               )}
             </div>
