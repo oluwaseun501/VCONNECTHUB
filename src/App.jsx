@@ -18,6 +18,7 @@ import { GoogleOAuthProvider } from "@react-oauth/google";
 import { getMaintenanceStatus } from "@/lib/api"; // ← adjust path if needed
 import MaintenancePage from "@/pages/maintenancePage";
 
+
 import LandingPage from "@/pages/landing";
 import Login from "@/pages/login";
 import Register from "@/pages/register";
