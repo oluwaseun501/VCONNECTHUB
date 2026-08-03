@@ -113,9 +113,9 @@ export default function AdminPricing() {
     (async () => {
       try {
         const [servicesRes] = await Promise.allSettled([
-          api.get(`/api/numbers/products/${selectedCountry.id}/any`, {
-            params: { provider: selectedProvider._id },
-          }),
+         api.get(`/api/numbers/products/${selectedCountry.id}/any`, {
+  params: { provider: selectedProvider._id, includeHidden: true }, 
+}),
           loadDisabled(selectedCountry, selectedProvider),
         ]);
 
@@ -131,10 +131,11 @@ export default function AdminPricing() {
   op?.cost ??
   0;
             return {
-              id:        key,
-              name:      key.charAt(0).toUpperCase() + key.slice(1),
-              basePrice: raw,
-            };
+  id:        key,
+  name:      key.charAt(0).toUpperCase() + key.slice(1),
+  basePrice: raw,
+  hiddenByApi: op?.isHidden ?? false, // ← NEW
+};
           });
           setServices(list);
         }
@@ -254,11 +255,12 @@ function getOverride(serviceId) {
 }
 
   function isDisabled(service) {
-    if (!selectedCountry || !selectedProvider) return false;
-    return disabledSet.has(
-      `${service.id.toLowerCase()}|${selectedCountry.id.toLowerCase()}|${selectedProvider._id}`
-    );
-  }
+  if (!selectedCountry || !selectedProvider) return false;
+  return disabledSet.has(
+    `${service.id.toLowerCase()}|${selectedCountry.id.toLowerCase()}|${selectedProvider._id}`
+  ) || service.hiddenByApi; 
+}
+
 
   // Provider label colour
   const providerColor = (idx) => [
