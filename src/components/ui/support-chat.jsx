@@ -1,7 +1,7 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { MessageCircle, X, ChevronLeft, ChevronRight } from "lucide-react";
 
-const WHATSAPP_NUMBER = "08159238355";
+const WHATSAPP_NUMBER = "13097894054";
 
 const FAQS = [
   {
@@ -40,6 +40,9 @@ const whatsappUrl = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(
   "Hi, I need help with VConnectHub."
 )}`;
 
+const BTN_SIZE = 54;
+const EDGE_GAP = 24; // same as bottom-6 / right-6 (24px)
+
 function WhatsAppIcon({ className }) {
   return (
     <svg viewBox="0 0 24 24" className={className} xmlns="http://www.w3.org/2000/svg" fill="currentColor">
@@ -52,6 +55,19 @@ export default function SupportChat() {
   const [open, setOpen] = useState(false);
   const [selected, setSelected] = useState(null);
 
+  // Position of the floating button (top-left corner of button)
+  const [pos, setPos] = useState(null); // null until we know window size
+  const isDragging = useRef(false);
+  const dragStart = useRef({ px: 0, py: 0, bx: 0, by: 0 });
+
+  // Set initial position bottom-right on mount
+  useEffect(() => {
+    setPos({
+      x: window.innerWidth - BTN_SIZE - EDGE_GAP,
+      y: window.innerHeight - BTN_SIZE - EDGE_GAP,
+    });
+  }, []);
+
   // Allow other parts of the app to open the chat programmatically
   useEffect(() => {
     const handler = () => { setOpen(true); setSelected(null); };
@@ -61,14 +77,105 @@ export default function SupportChat() {
 
   const handleClose = () => { setOpen(false); setSelected(null); };
 
+  // ── Drag logic ────────────────────────────────────────────
+  const onPointerDown = (e) => {
+    isDragging.current = false;
+    dragStart.current = {
+      px: e.clientX,
+      py: e.clientY,
+      bx: pos.x,
+      by: pos.y,
+    };
+
+    const onMove = (e) => {
+      const dx = e.clientX - dragStart.current.px;
+      const dy = e.clientY - dragStart.current.py;
+
+      // Only start dragging after moving 5px (prevents accidental drags)
+      if (!isDragging.current && Math.abs(dx) < 5 && Math.abs(dy) < 5) return;
+      isDragging.current = true;
+
+      setPos({
+        x: Math.min(
+          Math.max(dragStart.current.bx + dx, EDGE_GAP),
+          window.innerWidth - BTN_SIZE - EDGE_GAP
+        ),
+        y: Math.min(
+          Math.max(dragStart.current.by + dy, EDGE_GAP),
+          window.innerHeight - BTN_SIZE - EDGE_GAP
+        ),
+      });
+    };
+
+    const onUp = () => {
+      window.removeEventListener("pointermove", onMove);
+      window.removeEventListener("pointerup", onUp);
+    };
+
+    window.addEventListener("pointermove", onMove);
+    window.addEventListener("pointerup", onUp);
+  };
+
+  const handleBtnClick = () => {
+    // Don't toggle chat if the user was dragging
+    if (isDragging.current) return;
+    setOpen((v) => !v);
+    setSelected(null);
+  };
+
+  // ── Panel positioning ─────────────────────────────────────
+  // Open panel above the button if in bottom half, below if in top half.
+  // Open panel to the left if button is in right half, right if in left half.
+  const PANEL_W = 340;
+  const PANEL_H = 480;
+
+  const getPanelStyle = () => {
+    if (!pos) return {};
+    const screenW = window.innerWidth;
+    const screenH = window.innerHeight;
+
+    const btnCenterX = pos.x + BTN_SIZE / 2;
+    const btnCenterY = pos.y + BTN_SIZE / 2;
+
+    // Vertical: open above if button is in bottom 60% of screen
+    let top;
+    if (btnCenterY > screenH * 0.4) {
+      // above button
+      top = Math.max(EDGE_GAP, pos.y - PANEL_H - 12);
+    } else {
+      // below button
+      top = pos.y + BTN_SIZE + 12;
+    }
+
+    // Horizontal: align right edge of panel to right edge of button,
+    // but clamp so it never goes off-screen
+    let left = pos.x + BTN_SIZE - PANEL_W;
+    if (left < EDGE_GAP) left = EDGE_GAP;
+    if (left + PANEL_W > screenW - EDGE_GAP) left = screenW - PANEL_W - EDGE_GAP;
+
+    return { top, left };
+  };
+
+  if (!pos) return null;
+
   return (
     <>
-      {/* Floating trigger button */}
+      {/* ── Floating trigger button ── */}
       <button
-        onClick={() => { setOpen((v) => !v); setSelected(null); }}
+        onPointerDown={onPointerDown}
+        onClick={handleBtnClick}
         aria-label="Support chat"
-        className="fixed bottom-6 right-6 z-50 flex items-center justify-center rounded-full bg-gradient-to-br from-violet-600 to-fuchsia-500 text-white shadow-xl shadow-violet-500/30 hover:opacity-90 active:scale-95 transition-all"
-        style={{ width: 54, height: 54 }}
+        style={{
+          position: "fixed",
+          left: pos.x,
+          top: pos.y,
+          width: BTN_SIZE,
+          height: BTN_SIZE,
+          zIndex: 50,
+          touchAction: "none",
+          cursor: isDragging.current ? "grabbing" : "grab",
+        }}
+        className="flex items-center justify-center rounded-full bg-gradient-to-br from-violet-600 to-fuchsia-500 text-white shadow-xl shadow-violet-500/30 hover:opacity-90 active:scale-95 transition-all select-none"
       >
         {open ? <X className="w-5 h-5" /> : <MessageCircle className="w-5 h-5" />}
         {/* Pulse badge when closed */}
@@ -77,16 +184,28 @@ export default function SupportChat() {
         )}
       </button>
 
-      {/* Chat panel */}
+      {/* ── Drag hint tooltip (shows briefly on first render) ── */}
+      {!open && (
+        <div
+          className="fixed z-50 pointer-events-none"
+          style={{
+            left: pos.x - 60,
+            top: pos.y + BTN_SIZE + 6,
+            animation: "fadeOut 3s ease-out forwards",
+          }}
+        >
+        </div>
+      )}
+
+      {/* ── Chat panel ── */}
       {open && (
         <div
-          className="fixed bottom-24 right-6 z-50 w-[340px] rounded-3xl overflow-hidden shadow-2xl shadow-black/40 border border-white/10 flex flex-col"
-          style={{ maxHeight: "480px" }}
+          className="fixed z-50 w-[340px] rounded-3xl overflow-hidden shadow-2xl shadow-black/40 border border-white/10 flex flex-col"
+          style={{ maxHeight: `${PANEL_H}px`, ...getPanelStyle() }}
         >
           {/* Header */}
           <div className="bg-gradient-to-r from-violet-600 to-fuchsia-500 px-5 py-4 flex items-center justify-between flex-shrink-0">
             <div className="flex items-center gap-3">
-              {/* Agent avatar */}
               <div className="w-9 h-9 rounded-full bg-white/20 flex items-center justify-center text-white font-bold text-sm">
                 V
               </div>
