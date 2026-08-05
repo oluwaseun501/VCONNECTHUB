@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { MessageCircle, X, ChevronLeft, ChevronRight } from "lucide-react";
 
-const WHATSAPP_NUMBER = "13097894054";
+const WHATSAPP_NUMBER = "08159238355";
 
 const FAQS = [
   {
